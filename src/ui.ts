@@ -1,20 +1,189 @@
-import { App, Modal, Plugin, SuggestModal } from 'obsidian';
+import { App, Modal, SuggestModal } from 'obsidian';
+import MyPlugin from './main';
+import { Reminder } from './types';
 
-export class inputModal extends SuggestModal<string> {
+class optionsModal extends SuggestModal<string> {
+    options: string[] = [];
+    selectedItem: string;
+
+    constructor(app: App, private optionsArr: string[]) {
+        super(app);
+        this.emptyStateText = 'No matches found';
+        this.options = this.optionsArr;
+    }
+
+    onOpen() {
+        super.onOpen();
+        this.lightenBackground();
+    }
+
+    getSuggestions(query: string): string[] {
+        if (this.options) {
+            return this.options.filter(option => option.toLowerCase().includes(query.toLowerCase()));
+        } else {
+            this.close();
+        }
+    }
+
+    renderSuggestion(value: string, el: HTMLElement): void {
+        el.innerText = value;
+    }
+
+    onNoSuggestion(): void {
+        this.resultContainerEl.empty();
+        super.onNoSuggestion();
+    }
+
+    selectSuggestion(value: string, evt: MouseEvent | KeyboardEvent): void {
+        this.onChooseSuggestion(value, evt);
+    }
+
+    onChooseSuggestion(item: string, _: MouseEvent | KeyboardEvent): void {
+        this.selectedItem = item;
+        this.close();
+    }
+
+    lightenBackground() {
+        let modalBg: HTMLElement = this.containerEl.querySelector('.modal-bg');
+        if (modalBg) {
+            modalBg.style.backgroundColor = '#00000029';
+        }
+        this.modalEl.style.border = '4px solid #483699';
+    }
+}
+
+export class newReminderModals extends optionsModal {
+    constructor(app: App, private thisPlugin: MyPlugin, private modalType: number = 1) {
+        super(app, []);
+        this.options = this.getModalOptions(this.modalType);
+        this.modalType++;
+    }
+
+    getModalOptions(modalType: number): string[] {
+        let modalOptions: string[] = null;
+        switch (modalType) {
+            case 1:
+                modalOptions = ['Reminder number one', 'Reminder number two', 'Reminder number three'];
+                break;
+            case 2:
+                modalOptions = ['minutes', 'hours', 'days', 'weeks', 'months', 'years'];
+                break;
+            case 3:
+                const prevItem = this.thisPlugin.modalResponse[this.thisPlugin.modalResponse.length - 1];
+                switch (prevItem) {
+                    case 'minutes':
+                        modalOptions = ['1', '15', '30', '45', '60'];
+                        break;
+                    case 'hours':
+                        modalOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23']
+                        break;
+                    case 'days':
+                        modalOptions = ['1', '2', '3', '4', '5', '6', '7'];
+                        break;
+                    case 'weeks':
+                        modalOptions = ['1', '2', '3', '4'];
+                        break;
+                    case 'months':
+                        modalOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+                        break;
+                    case 'years':
+                        modalOptions = ['1', '2', '3', '4'];
+                        break;
+                }
+                break;
+        }
+        return modalOptions;
+    }
+
+    async createReminder(modalResponse: string[]) {
+        const dtReminder = new Date();
+        const dtTimeUID = dtReminder.getTime();
+        const nextReminder = dtTimeUID + (1 * 60000);
+        const remindTitle = modalResponse[0];
+        const remindContent = remindTitle;
+
+        let reminder: Reminder = {
+            id: dtTimeUID,
+            createdAt: dtTimeUID,
+            modifiedAt: dtTimeUID,
+            title: remindTitle,
+            content: remindContent,
+            remindNext: nextReminder,
+            remindPrev: [],
+            recurring: null,
+            remind: [],
+            completed: null
+        };
+        this.thisPlugin.settings.reminders.push(reminder);
+        await this.thisPlugin.saveSettings();
+        console.log("Reminder created and saved");
+        console.log(reminder);
+    }
+
+    onClose(): void {
+        super.onClose();
+        if (this.selectedItem) {
+            this.thisPlugin.modalResponse.push(this.selectedItem);
+            if (this.getModalOptions(this.modalType) !== null) {
+                const modalSelect = new newReminderModals(this.app, this.thisPlugin, this.modalType);
+                modalSelect.open();
+            } else {
+                //All modals have been responded to, now we can create the reminder
+                this.createReminder(this.thisPlugin.modalResponse);
+            }
+        }
+    }
+}
+
+export class SampleModal extends Modal {
+    constructor(app: App) {
+        super(app);
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.setText('Woah!');
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+export class timeModal extends optionsModal {
     options: string[] = [];
     firstSet: string[] = ['minutes BLAH', 'hours', 'days', 'weeks', 'months'];
     secondSet: string[] = ['one', 'two', 'three', 'four'];
     thirdSet: string[] = ['blue', 'red', 'green', 'orange'];
 
-    constructor(app: App, private thisPlugin: Plugin, private modalType: string) {
-        super(app);
-        /*
-            this.setPlaceholder("Enter any keyword(s) to filter by plain text search...");
-            this.setInstructions([
-                { command: 'Plain Text: ', purpose: 'No [[Page]] or #Tag required' },
-            ]);
-            this.limit = 5;
-        */
+    constructor(app: App, private thisPlugin: MyPlugin, private modalType: string[]) {
+        super(app, modalType);
+        this.setPlaceholder("Enter any keyword(s) to filter by plain text search...");
+        this.setInstructions([
+            { command: 'Plain Text: ', purpose: 'No [[Page]] or #Tag required' },
+        ]);
+        this.limit = 5;
         this.emptyStateText = 'No matches found';
         switch (this.modalType) {
             case "reminder":
@@ -35,41 +204,6 @@ export class inputModal extends SuggestModal<string> {
         }
     }
 
-    onOpen() {
-        super.onOpen();
-        this.lightenBackground();
-    }
-
-    lightenBackground() {
-        let modalBg: HTMLElement = this.containerEl.querySelector('.modal-bg');
-        if (modalBg) {
-            modalBg.style.backgroundColor = '#00000029';
-        }
-        this.modalEl.style.border = '4px solid #483699';
-    }
-
-    getSuggestions(query: string): string[] {
-        return this.options.filter(option => option.toLowerCase().includes(query.toLowerCase()));
-    }
-
-    renderSuggestion(value: string, el: HTMLElement): void {
-        el.innerText = value;
-    }
-
-    onNoSuggestion(): void {
-        this.resultContainerEl.empty();
-        super.onNoSuggestion();
-    }
-
-    selectSuggestion(value: string, evt: MouseEvent | KeyboardEvent): void {
-        this.onChooseSuggestion(value, evt);
-    }
-
-    onChooseSuggestion(item: string, _: MouseEvent | KeyboardEvent): void {
-        console.log(item);
-        this.close();
-    }
-
     onClose(): void {
         if (this.modalType) {
             const modalSelect = new inputModal(this.app, this.thisPlugin, this.modalType);
@@ -77,19 +211,4 @@ export class inputModal extends SuggestModal<string> {
         }
     }
 }
-
-export class SampleModal extends Modal {
-    constructor(app: App) {
-        super(app);
-    }
-
-    onOpen() {
-        const { contentEl } = this;
-        contentEl.setText('Woah!');
-    }
-
-    onClose() {
-        const { contentEl } = this;
-        contentEl.empty();
-    }
-}
+*/

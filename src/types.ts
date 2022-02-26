@@ -17,15 +17,15 @@ interface SettingsObject {
 
 export interface Reminder {
     id: number;
-    createdAt: Date;
-    modifiedAt: Date;
+    createdAt: number;
+    modifiedAt: number;
     title: string;
     content: string;
-    remindNext: Date;
-    remindPrev: Date;
+    remindNext: number;
+    remindPrev: number[];
     recurring: Recurrence;
     remind: Alert[];
-    completed: Date;
+    completed: number;
 }
 
 type Occurrence = 'minutes' | 'hours' | 'days' | 'weeks' | 'months';

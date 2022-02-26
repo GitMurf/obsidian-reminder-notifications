@@ -8,7 +8,7 @@ export const DEFAULT_SETTINGS: MyPluginSettings = {
         setting2: 2,
         setting3: 'three'
     },
-    reminders: [{ id: 1, createdAt: new Date(), modifiedAt: new Date(), title: 'test', content: 'this is some content', remindNext: new Date(), remindPrev: new Date(), recurring: { type: 'minutes', start: new Date(), end: new Date(), interval: 1 }, remind: [{ type: 'minutes', value: 15 }], completed: null }]
+    reminders: []
 }
 
 export class SampleSettingTab extends PluginSettingTab {

@@ -1,25 +1,29 @@
 import { Plugin } from 'obsidian';
 import { MyPluginSettings } from 'src/types';
-import { inputModal, SampleModal } from './ui';
+import { newReminderModals, SampleModal } from './ui';
 import { SampleSettingTab, DEFAULT_SETTINGS } from 'src/settings';
 
 const pluginName = 'Reminder Notifications';
 
 export default class MyPlugin extends Plugin {
     settings: MyPluginSettings;
+    modalResponse: string[];
 
     async onload() {
         console.log("loading plugin: " + pluginName);
         await this.loadSettings();
-        console.log(this.settings.reminders);
-        this.settings.reminders[0].remindNext = window.moment(this.settings.reminders[0].remindNext).add(1, 'minutes').toDate();
         await this.saveSettings(); 
 
         // This creates an icon in the left ribbon.
         const ribbonIconEl = this.addRibbonIcon('clock', 'Reminder', (evt: MouseEvent) => {
             // Called when the user clicks the icon.
             //createReminder(this.app, this);
-            const modalSelect = new inputModal(this.app, this, "reminder");
+            
+            //const modalSelect = new newReminderModal(this.app, this);
+            //modalSelect.open();
+
+            this.modalResponse = [];
+            const modalSelect = new newReminderModals(this.app, this);
             modalSelect.open();
         });
 
@@ -42,7 +46,40 @@ export default class MyPlugin extends Plugin {
         this.addSettingTab(new SampleSettingTab(this.app, this));
 
         // When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-        //this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+        const min = 0;
+        const sec = 30;
+        this.registerInterval(
+            window.setInterval(async () => {
+                const newDateTimeNumber = new Date().getTime();
+                console.log(`setInterval: ${newDateTimeNumber}`);
+                const myReminders = this.settings.reminders;
+                const pastReminders = myReminders.filter(reminder => {
+                    if (reminder.remindNext && reminder.completed === null) {
+                        const nextReminder = reminder.remindNext;
+                        if (nextReminder < newDateTimeNumber && nextReminder > 0) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                });
+                if (pastReminders.length > 0) {
+                    console.log("pastReminders: " + pastReminders.length);
+                    //loop through past reminders with index
+                    for (let i = 0; i < pastReminders.length; i++) {
+                        const reminder = pastReminders[i];
+                        reminder.modifiedAt = newDateTimeNumber;
+                        reminder.remindPrev.push(reminder.remindNext);
+                        reminder.remindNext = reminder.remindNext + (1 * 60000);
+                        reminder.completed = newDateTimeNumber;
+                    }
+                    await this.saveSettings();
+                    //console.log("Reminders saved");
+                }
+            }, (min * 60 * 1000) + (sec * 1000)),
+        );
     }
 
     onunload() {
