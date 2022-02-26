@@ -2,6 +2,7 @@ import { Plugin } from 'obsidian';
 import { MyPluginSettings } from 'src/types';
 import { newReminderModals, SampleModal } from './ui';
 import { SampleSettingTab, DEFAULT_SETTINGS } from 'src/settings';
+import { checkForReminders } from './helpers';
 
 const pluginName = 'Reminder Notifications';
 
@@ -50,34 +51,7 @@ export default class MyPlugin extends Plugin {
         const sec = 30;
         this.registerInterval(
             window.setInterval(async () => {
-                const newDateTimeNumber = new Date().getTime();
-                console.log(`setInterval: ${newDateTimeNumber}`);
-                const myReminders = this.settings.reminders;
-                const pastReminders = myReminders.filter(reminder => {
-                    if (reminder.remindNext && reminder.completed === null) {
-                        const nextReminder = reminder.remindNext;
-                        if (nextReminder < newDateTimeNumber && nextReminder > 0) {
-                            return true;
-                        } else {
-                            return false;
-                        }
-                    } else {
-                        return false;
-                    }
-                });
-                if (pastReminders.length > 0) {
-                    console.log("pastReminders: " + pastReminders.length);
-                    //loop through past reminders with index
-                    for (let i = 0; i < pastReminders.length; i++) {
-                        const reminder = pastReminders[i];
-                        reminder.modifiedAt = newDateTimeNumber;
-                        reminder.remindPrev.push(reminder.remindNext);
-                        reminder.remindNext = reminder.remindNext + (1 * 60000);
-                        reminder.completed = newDateTimeNumber;
-                    }
-                    await this.saveSettings();
-                    //console.log("Reminders saved");
-                }
+                await checkForReminders(this);
             }, (min * 60 * 1000) + (sec * 1000)),
         );
     }
