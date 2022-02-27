@@ -1,12 +1,16 @@
 import { Notice, Plugin, Stat } from "obsidian";
 import MyPlugin from "./main";
-import { TimeType } from "./types";
+import { Reminder, TimeType } from "./types";
 
 export async function checkForReminders(plugin: MyPlugin) {
     const newDateTimeNumber = new Date().getTime();
 
     //Need to load settings here (if Data.json has been updated) in case changed from another device; Obsidian does not reload variables otherwise
+    //console.log('Checking if need to reload settings...');
+    //console.time('Testing settings loading');
     await reloadDataJsonIfNewer(plugin);
+    //console.timeEnd('Testing settings loading');
+    //console.log('');
 
     const myReminders = plugin.settings.reminders;
     //loop through all reminders
@@ -16,39 +20,45 @@ export async function checkForReminders(plugin: MyPlugin) {
         const reminder = myReminders[i];
         const seenAlready = reminder.seen.includes(plugin.deviceId);
         const completedAlready = reminder.completed;
-        if (reminder.completed === null || reminder.seen.indexOf(plugin.deviceId) === -1) {
-            if (reminder.remindNext) {
-                const nextReminder = reminder.remindNext;
+        if (completedAlready === null) {
+            //Not marked as completed yet
+            //Whether "seen" or not, still should just apply as if hadn't been seen before even if re-show a notification
+                //In theory if not marked as complete then should not be seen yet... accounting for fluke scenarios just in case to show again
+            //console.log("Reminder NOT marked as completed yet");
+            const nextReminder = reminder.remindNext;
+            if (nextReminder) {
                 if (nextReminder < newDateTimeNumber && nextReminder > 0) {
                     ctrNew++;
-                    showObsidianNotice(reminder.title);
-                    reminder.modifiedAt = newDateTimeNumber;
-                    reminder.remindPrev.push(reminder.remindNext);
-                    //reminder.remindNext = reminder.remindNext + (1 * 60000);
-                    reminder.completed = newDateTimeNumber;
-                    reminder.seen.push(plugin.deviceId);
-                    const newNote = `Completed reminder at ${formatDate(newDateTimeNumber)}\nArchiving this reminder`;
-                    const updatedNote = reminder.notes ? `${reminder.notes}\n${newNote}` : newNote;
-                    reminder.notes = updatedNote;
-                    console.log(reminder.notes);
-                    /* SKIPPING THIS NOW TO GIVE TIME FOR OTHER DEVICES TO SHOW A NOTIFICATION BEFORE IT ARCHIVES IT. WILL ARCHIVE ON THE NEXT CHECK.
-                    //move the reminder to the archived list
-                    plugin.settings.archived.push(reminder);
-                    //remove the reminder from the reminders list
-                    plugin.settings.reminders.splice(i, 1);
-                    */
+                    reminderShowNotification(plugin, reminder, i, newDateTimeNumber);
+                    const archived = reminderArchive(plugin, reminder, i);
+                    if (archived) {
+                        ctrArchived++;
+                    }
                 }
             }
         } else {
-            ctrArchived++;
-            const newNote = `Archiving reminder at ${formatDate(newDateTimeNumber)}`;
-            const updatedNote = reminder.notes ? `${reminder.notes}\n${newNote}` : newNote;
-            reminder.notes = updatedNote;
-            console.log(reminder.notes);
-            //move the reminder to the archived list
-            plugin.settings.archived.push(reminder);
-            //reminder has been completed, remove it from the reminders list
-            plugin.settings.reminders.splice(i, 1);
+            //Marked as completed but it still isn't archived yet
+            console.log("Reminder marked as completed but it still isn't archived yet");
+            if (seenAlready) {
+                //Already seen, but not archived yet. Do NOT show notification again but check if should be archived
+                const archived = reminderArchive(plugin, reminder, i);
+                if (archived) {
+                    ctrArchived++;
+                }
+            } else {
+                //Not seen before, so show notification and check if should be archived
+                const nextReminder = reminder.remindNext;
+                if (nextReminder) {
+                    if (nextReminder < newDateTimeNumber && nextReminder > 0) {
+                        ctrNew++;
+                        reminderShowNotification(plugin, reminder, i, newDateTimeNumber);
+                        const archived = reminderArchive(plugin, reminder, i);
+                        if (archived) {
+                            ctrArchived++;
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -61,14 +71,55 @@ export async function checkForReminders(plugin: MyPlugin) {
     }
 }
 
+function reminderMarkComplete(plugin: MyPlugin, reminder: Reminder, completedTime: number = new Date().getTime()) {
+    reminder.completed = completedTime;
+}
+
+function reminderShowNotification(plugin: MyPlugin, reminder: Reminder, remIndex: number, completedTime: number) {
+    reminderMarkComplete(plugin, reminder, completedTime);
+    const nextReminder = reminder.remindNext;
+    showObsidianNotice(`${formatDate(nextReminder, "hh:mm A")}: ${reminder.title}`);
+    reminder.modifiedAt = reminder.completed;
+    reminder.remindPrev.push(reminder.remindNext);
+    //reminder.remindNext = reminder.remindNext + (1 * 60000);
+    reminder.seen.push(plugin.deviceId);
+    const newNote = `[${plugin.deviceId}] Completed reminder at ${formatDate(completedTime)}`;
+    const updatedNote = reminder.notes ? `${reminder.notes}\n${newNote}` : newNote;
+    reminder.notes = updatedNote;
+    console.log(reminder.notes);
+}
+
+function reminderArchive(plugin: MyPlugin, reminder: Reminder, remIndex: number): boolean {
+    const currentTime = new Date().getTime();
+    const bufferTime = addTime(currentTime, TimeType.seconds, -60);
+
+    if (reminder.completed < bufferTime) {
+        const newNote = `[${plugin.deviceId}] Archiving reminder at ${formatDate(currentTime)}`;
+        const updatedNote = reminder.notes ? `${reminder.notes}\n${newNote}` : newNote;
+        reminder.notes = updatedNote;
+        console.log(reminder.notes);
+        //move the reminder to the archived list
+        plugin.settings.archived.push(reminder);
+        //reminder has been completed, remove it from the reminders list
+        plugin.settings.reminders.splice(remIndex, 1);
+        return true;
+    } else {
+        console.log(`currentTime: ${formatDate(currentTime)}`);
+        console.log(`bufferTime: ${formatDate(bufferTime)}`);
+        console.log(`completed: ${formatDate(reminder.completed)}`);
+        console.log(reminder.seen);
+        return false;
+    }
+}
+
 async function reloadDataJsonIfNewer(plugin: MyPlugin): Promise<void> {
     const lastDataJsonLoad = plugin.lastLoadDataJsonModified;
     const dataJsonPath = `${plugin.pluginFolderDir}/data.json`;
     const getDataJsonFileStats = await getFileStats(plugin, dataJsonPath);
     const dataJsonModified = getDataJsonFileStats ? getDataJsonFileStats.mtime : 0;
     const modDiff = dataJsonModified - lastDataJsonLoad;
-    console.log(`FILE: ${formatDate(dataJsonModified)}`);
-    console.log(` VAR: ${formatDate(lastDataJsonLoad)}`);
+    //console.log(`FILE: ${formatDate(dataJsonModified)}`);
+    //console.log(` VAR: ${formatDate(lastDataJsonLoad)}`);
     if (modDiff > 0) {
         console.log(`Data.json modified time is ${Math.floor(modDiff / 1000)} seconds newer than your last Loaded Variables. Loading data.json settings now.`);
         await plugin.loadSettings();

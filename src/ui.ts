@@ -117,7 +117,7 @@ export class newReminderModals extends optionsModal {
             remind: [],
             completed: null,
             seen: [],
-            notes: `Created reminder at ${formatDate(dtTimeUID)}\nNext reminder in ${getTimeDurationString(howLong, timeTypeEnum)} at ${formatDate(nextReminder)}`,
+            notes: `[${this.thisPlugin.deviceId}] Created reminder at ${formatDate(dtTimeUID)}\nNext reminder in ${getTimeDurationString(howLong, timeTypeEnum)} at ${formatDate(nextReminder)}`,
         };
         console.log(reminder.notes);
         this.thisPlugin.settings.reminders.push(reminder);
