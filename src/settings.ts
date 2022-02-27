@@ -8,7 +8,9 @@ export const DEFAULT_SETTINGS: MyPluginSettings = {
         setting2: 2,
         setting3: 'three'
     },
-    reminders: []
+    lastUpdated: null,
+    reminders: [],
+    archived: []
 }
 
 export class SampleSettingTab extends PluginSettingTab {

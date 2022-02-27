@@ -2,27 +2,31 @@ import { Plugin } from 'obsidian';
 import { MyPluginSettings } from 'src/types';
 import { newReminderModals, SampleModal } from './ui';
 import { SampleSettingTab, DEFAULT_SETTINGS } from 'src/settings';
-import { checkForReminders } from './helpers';
+import { checkForReminders, createRandomHashId, updateDataJsonModVar } from './helpers';
 
 const pluginName = 'Reminder Notifications';
 
 export default class MyPlugin extends Plugin {
     settings: MyPluginSettings;
     modalResponse: string[];
+    deviceId: string;
+    pluginFolderDir: string;
+    lastLoadDataJsonModified: number;
 
     async onload() {
-        console.log("loading plugin: " + pluginName);
+        //Create a temporary random device id for tracking whether this device has seen notifications
+        this.deviceId = createRandomHashId();
+        console.log(`loading plugin: ${pluginName} - DeviceID: ${this.deviceId}`);
+
+        //Set the dataJsonModified variable to track the last time the data.json file was modified and loaded
+        this.pluginFolderDir = this.manifest.dir;
+        this.lastLoadDataJsonModified = 0;
         await this.loadSettings();
-        await this.saveSettings(); 
+        await this.saveSettings();
 
         // This creates an icon in the left ribbon.
         const ribbonIconEl = this.addRibbonIcon('clock', 'Reminder', (evt: MouseEvent) => {
             // Called when the user clicks the icon.
-            //createReminder(this.app, this);
-            
-            //const modalSelect = new newReminderModal(this.app, this);
-            //modalSelect.open();
-
             this.modalResponse = [];
             const modalSelect = new newReminderModals(this.app, this);
             modalSelect.open();
@@ -48,7 +52,7 @@ export default class MyPlugin extends Plugin {
 
         // When registering intervals, this function will automatically clear the interval when the plugin is disabled.
         const min = 0;
-        const sec = 30;
+        const sec = 10;
         this.registerInterval(
             window.setInterval(async () => {
                 await checkForReminders(this);
@@ -62,9 +66,11 @@ export default class MyPlugin extends Plugin {
 
     async loadSettings() {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        await updateDataJsonModVar(this, "Loaded settings: ");
     }
 
     async saveSettings() {
         await this.saveData(this.settings);
+        await updateDataJsonModVar(this, "Saved settings: ");
     }
 }

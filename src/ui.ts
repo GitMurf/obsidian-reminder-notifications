@@ -1,6 +1,7 @@
 import { App, Modal, SuggestModal } from 'obsidian';
+import { addTime, formatDate, getTimeDurationString, getTimeTypeEnumFromString, getTimeTypeString } from './helpers';
 import MyPlugin from './main';
-import { Reminder } from './types';
+import { Reminder, TimeType } from './types';
 
 class optionsModal extends SuggestModal<string> {
     options: string[] = [];
@@ -66,7 +67,7 @@ export class newReminderModals extends optionsModal {
                 modalOptions = ['Reminder number one', 'Reminder number two', 'Reminder number three'];
                 break;
             case 2:
-                modalOptions = ['minutes', 'hours', 'days', 'weeks', 'months', 'years'];
+                modalOptions = [getTimeTypeString(TimeType.minutes), getTimeTypeString(TimeType.hours), getTimeTypeString(TimeType.days), getTimeTypeString(TimeType.weeks), getTimeTypeString(TimeType.months), getTimeTypeString(TimeType.quarters), getTimeTypeString(TimeType.years)];
                 break;
             case 3:
                 const prevItem = this.thisPlugin.modalResponse[this.thisPlugin.modalResponse.length - 1];
@@ -95,10 +96,12 @@ export class newReminderModals extends optionsModal {
         return modalOptions;
     }
 
-    async createReminder(modalResponse: string[]) {
+    async createReminderFromModals(modalResponse: string[]) {
         const dtReminder = new Date();
         const dtTimeUID = dtReminder.getTime();
-        const nextReminder = dtTimeUID + (1 * 60000);
+        const timeTypeEnum = getTimeTypeEnumFromString(modalResponse[1]);
+        const howLong = Number(modalResponse[2]);
+        const nextReminder = addTime(dtTimeUID, timeTypeEnum, howLong);
         const remindTitle = modalResponse[0];
         const remindContent = remindTitle;
 
@@ -112,11 +115,15 @@ export class newReminderModals extends optionsModal {
             remindPrev: [],
             recurring: null,
             remind: [],
-            completed: null
+            completed: null,
+            seen: [],
+            notes: `Created reminder at ${formatDate(dtTimeUID)}\nNext reminder in ${getTimeDurationString(howLong, timeTypeEnum)} at ${formatDate(nextReminder)}`,
         };
+        console.log(reminder.notes);
         this.thisPlugin.settings.reminders.push(reminder);
+        this.thisPlugin.settings.lastUpdated = dtTimeUID;
         await this.thisPlugin.saveSettings();
-        console.log("Reminder created and saved");
+        //console.log("Reminder created and saved");
         console.log(reminder);
     }
 
@@ -129,7 +136,7 @@ export class newReminderModals extends optionsModal {
                 modalSelect.open();
             } else {
                 //All modals have been responded to, now we can create the reminder
-                this.createReminder(this.thisPlugin.modalResponse);
+                this.createReminderFromModals(this.thisPlugin.modalResponse);
             }
         }
     }

@@ -4,9 +4,23 @@ declare module "obsidian" {
     }
 }
 
+export enum TimeType {
+    milliseconds,
+    seconds,
+    minutes,
+    hours,
+    days,
+    weeks,
+    months,
+    quarters,
+    years
+}
+
 export interface MyPluginSettings {
     MyConfigSettings: SettingsObject;
+    lastUpdated: number;
     reminders: Reminder[];
+    archived: Reminder[];
 }
 
 interface SettingsObject {
@@ -26,6 +40,8 @@ export interface Reminder {
     recurring: Recurrence;
     remind: Alert[];
     completed: number;
+    seen: string[];
+    notes: string;
 }
 
 type Occurrence = 'minutes' | 'hours' | 'days' | 'weeks' | 'months';
