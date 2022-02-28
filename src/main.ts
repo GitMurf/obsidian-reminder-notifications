@@ -2,7 +2,7 @@ import { Plugin } from 'obsidian';
 import { MyPluginSettings } from 'src/types';
 import { newReminderModals, SampleModal } from './ui';
 import { SampleSettingTab, DEFAULT_SETTINGS } from 'src/settings';
-import { checkForReminders, createRandomHashId, updateDataJsonModVar } from './helpers';
+import { checkForReminders, getDeviceName, updateDataJsonModVar } from './helpers';
 
 const pluginName = 'Reminder Notifications';
 
@@ -14,9 +14,9 @@ export default class MyPlugin extends Plugin {
     lastLoadDataJsonModified: number;
 
     async onload() {
-        //Create a temporary random device id for tracking whether this device has seen notifications
-        this.deviceId = createRandomHashId();
-        console.log(`loading plugin: ${pluginName} - DeviceID: ${this.deviceId}`);
+        //Get (or create) the Device Name (Obsidian Sync) or randomly created device ID. Use to track if device has seen a notification
+        this.deviceId = getDeviceName(this);
+        console.log(`loading plugin: ${pluginName} [${this.deviceId}]`);
 
         //Set the dataJsonModified variable to track the last time the data.json file was modified and loaded
         this.pluginFolderDir = this.manifest.dir;

@@ -251,7 +251,21 @@ export function addTime(dateTimeNumber: number | Date, addType: TimeType, addVal
     return newDateTime.getTime();
 }
 
-export function createRandomHashId(charCt: number = 7): string {
+export function getDeviceName(plugin: Plugin) {
+    let deviceName = "";
+    //Check if Obsidian Sync is enabled
+    const syncPlugin = plugin.app.internalPlugins.plugins["sync"];
+    if (syncPlugin) {
+        const syncPluginInst = syncPlugin.instance;
+        if (syncPlugin.enabled) {
+            deviceName = syncPluginInst.deviceName ? syncPluginInst.deviceName : syncPluginInst.getDefaultDeviceName();
+        }
+    }
+    if (!deviceName) { deviceName = createRandomHashId(); }
+    return deviceName;
+}
+
+function createRandomHashId(charCt: number = 7): string {
     let result = '';
     const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
     const charactersLength = characters.length;
