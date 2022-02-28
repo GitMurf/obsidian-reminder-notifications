@@ -78,7 +78,7 @@ function reminderMarkComplete(plugin: MyPlugin, reminder: Reminder, completedTim
 function reminderShowNotification(plugin: MyPlugin, reminder: Reminder, remIndex: number, completedTime: number) {
     reminderMarkComplete(plugin, reminder, completedTime);
     const nextReminder = reminder.remindNext;
-    showObsidianNotice(`${formatDate(nextReminder, "hh:mm A")}: ${reminder.title}`);
+    showObsidianNotice(`${formatDate(nextReminder, "hh:mm A")}: ${reminder.title}`, (60 * 60));
     reminder.modifiedAt = reminder.completed;
     reminder.remindPrev.push(reminder.remindNext);
     //reminder.remindNext = reminder.remindNext + (1 * 60000);
@@ -91,7 +91,7 @@ function reminderShowNotification(plugin: MyPlugin, reminder: Reminder, remIndex
 
 function reminderArchive(plugin: MyPlugin, reminder: Reminder, remIndex: number): boolean {
     const currentTime = new Date().getTime();
-    const bufferTime = addTime(currentTime, TimeType.seconds, -60);
+    const bufferTime = addTime(currentTime, TimeType.seconds, -30);
 
     if (reminder.completed < bufferTime) {
         const newNote = `[${plugin.deviceId}] Archiving reminder at ${formatDate(currentTime)}`;
