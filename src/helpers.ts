@@ -164,21 +164,20 @@ function showObsidianNotice(title: string, showTimeSeconds: number = 30) {
         console.log("Button clicked");
     });
     newButton = buttonParDiv.createEl("button");
-    newButton.setText("Test Button 2");
-    newButton.onClickEvent(() => {
-        console.log("Button 2 clicked");
-    });
+    newButton.setText("Close Notification");
 
-    /* WORKING
-    let newDocFrag = createFragment();
-    let newSpan = newDocFrag.createSpan("test-class");
-    newSpan.innerText = title;
-    newSpan.style.color = "red";
-    */
-    
     const newNotice = new Notice(newDocFrag, showTimeMs);
     newNotice.noticeEl.style.maxWidth = "unset";
-    //new Notice(title, showTimeMs);
+    newNotice.noticeEl.style.cursor = "unset";
+    const noticeHide = newNotice.hide;
+    newNotice.hide = function () {
+        //Do nothing unless the buttons are clicked
+    }
+    newButton.onClickEvent(() => {
+        console.log("Button 2 clicked");
+        newNotice.hide = noticeHide;
+        newNotice.hide();
+    });
 }
 
 export function getTimeTypeString(ttEnum: TimeType): string {
