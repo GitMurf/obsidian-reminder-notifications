@@ -2,7 +2,7 @@ import { Plugin } from 'obsidian';
 import { MyPluginSettings } from 'src/types';
 import { newReminderModals, SampleModal } from './ui';
 import { SampleSettingTab, DEFAULT_SETTINGS } from 'src/settings';
-import { checkForReminders, getDeviceName, updateDataJsonModVar } from './helpers';
+import { checkForReminders, getDeviceName, isObsidianSyncLoaded, sleepDelay, updateDataJsonModVar } from './helpers';
 
 const pluginName = 'Reminder Notifications';
 
@@ -14,6 +14,12 @@ export default class MyPlugin extends Plugin {
     lastLoadDataJsonModified: number;
 
     async onload() {
+        if (isObsidianSyncLoaded(this) === false) {
+            await sleepDelay(5);
+            if (isObsidianSyncLoaded(this) === false) {
+                await sleepDelay(5);
+            }
+        }
         //Get (or create) the Device Name (Obsidian Sync) or randomly created device ID. Use to track if device has seen a notification
         this.deviceId = getDeviceName(this);
         console.log(`loading plugin: ${pluginName} [${this.deviceId}]`);
@@ -22,7 +28,10 @@ export default class MyPlugin extends Plugin {
         this.pluginFolderDir = this.manifest.dir;
         this.lastLoadDataJsonModified = 0;
         await this.loadSettings();
-        await this.saveSettings();
+        if (await this.app.vault.adapter.exists(`${this.pluginFolderDir}/data.json`) === false) {
+            //Only start with a save if the data.json file doesn't exist. We don't want an old data.json file to be loaded and then saved which would overwrite the data.json from other devices with Obsidian Sync
+            await this.saveSettings();
+        }
 
         // This creates an icon in the left ribbon.
         const ribbonIconEl = this.addRibbonIcon('clock', 'Reminder', (evt: MouseEvent) => {

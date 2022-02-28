@@ -265,6 +265,17 @@ export function getDeviceName(plugin: Plugin) {
     return deviceName;
 }
 
+export function isObsidianSyncLoaded(plugin: Plugin): boolean {
+    let isObsidianSyncLoaded = false;
+    const syncPlugin = plugin.app.internalPlugins.plugins["sync"];
+    if (syncPlugin) {
+        if (syncPlugin.enabled) {
+            isObsidianSyncLoaded = true;
+        }
+    }
+    return isObsidianSyncLoaded;
+}
+
 function createRandomHashId(charCt: number = 7): string {
     let result = '';
     const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -273,4 +284,8 @@ function createRandomHashId(charCt: number = 7): string {
         result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     return result;
+}
+
+export async function sleepDelay(seconds: number): Promise<void> {
+    return new Promise(resolve => { setTimeout(resolve, seconds * 1000); });
 }
