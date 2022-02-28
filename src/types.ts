@@ -37,6 +37,9 @@ declare module "obsidian" {
             };
         };
     }
+    interface Notice {
+        noticeEl: HTMLDivElement;
+    }
 }
 
 export enum TimeType {

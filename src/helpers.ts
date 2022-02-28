@@ -144,7 +144,41 @@ async function getFileStats(plugin: Plugin, filePath: string): Promise<Stat> {
 
 function showObsidianNotice(title: string, showTimeSeconds: number = 30) {
     const showTimeMs = showTimeSeconds * 1000;
-    new Notice(title, showTimeMs);
+    let newDocFrag = createFragment();
+    let newDivPar = newDocFrag.createDiv();
+
+    let spanParDiv = newDivPar.createDiv();
+    let newSpan = spanParDiv.createSpan();
+    newSpan.setText(title);
+    newSpan.style.fontWeight = "bold";
+    spanParDiv.createEl("br");
+    newSpan = spanParDiv.createSpan();
+    newSpan.setText("This is the second span");
+    spanParDiv.createEl("br");
+    spanParDiv.createEl("br");
+
+    let buttonParDiv = newDivPar.createDiv();
+    let newButton = buttonParDiv.createEl("button");
+    newButton.setText("Test Button");
+    newButton.onClickEvent(() => {
+        console.log("Button clicked");
+    });
+    newButton = buttonParDiv.createEl("button");
+    newButton.setText("Test Button 2");
+    newButton.onClickEvent(() => {
+        console.log("Button 2 clicked");
+    });
+
+    /* WORKING
+    let newDocFrag = createFragment();
+    let newSpan = newDocFrag.createSpan("test-class");
+    newSpan.innerText = title;
+    newSpan.style.color = "red";
+    */
+    
+    const newNotice = new Notice(newDocFrag, showTimeMs);
+    newNotice.noticeEl.style.maxWidth = "unset";
+    //new Notice(title, showTimeMs);
 }
 
 export function getTimeTypeString(ttEnum: TimeType): string {

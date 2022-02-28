@@ -73,7 +73,7 @@ export class newReminderModals extends optionsModal {
                 const prevItem = this.thisPlugin.modalResponse[this.thisPlugin.modalResponse.length - 1];
                 switch (prevItem) {
                     case 'minutes':
-                        modalOptions = ['1', '15', '30', '45', '60'];
+                        modalOptions = ['1', '2', '15', '30', '45', '60'];
                         break;
                     case 'hours':
                         modalOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23']
@@ -101,7 +101,12 @@ export class newReminderModals extends optionsModal {
         const dtTimeUID = dtReminder.getTime();
         const timeTypeEnum = getTimeTypeEnumFromString(modalResponse[1]);
         const howLong = Number(modalResponse[2]);
-        const nextReminder = addTime(dtTimeUID, timeTypeEnum, howLong);
+        let nextReminder;
+        if (timeTypeEnum === TimeType.minutes && howLong == 2) {
+            nextReminder = addTime(dtTimeUID, TimeType.seconds, 5);
+        } else {
+            nextReminder = addTime(dtTimeUID, timeTypeEnum, howLong);
+        }
         const remindTitle = modalResponse[0];
         const remindContent = remindTitle;
 
