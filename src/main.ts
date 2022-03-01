@@ -1,6 +1,6 @@
 import { Plugin } from 'obsidian';
 import { MyPluginSettings } from 'src/types';
-import { newReminderModals, SampleModal } from './ui';
+import { NewReminderModals, SampleModal } from './ui';
 import { SampleSettingTab, DEFAULT_SETTINGS } from 'src/settings';
 import { checkForReminders, getDeviceName, isObsidianSyncLoaded, sleepDelay, updateDataJsonModVar } from './helpers';
 
@@ -38,7 +38,7 @@ export default class MyPlugin extends Plugin {
         const ribbonIconEl = this.addRibbonIcon('bell-plus', 'Reminder', (evt: MouseEvent) => {
             // Called when the user clicks the icon.
             this.modalResponse = [];
-            const modalSelect = new newReminderModals(this.app, this);
+            const modalSelect = new NewReminderModals(this.app, this);
             modalSelect.open();
         });
 

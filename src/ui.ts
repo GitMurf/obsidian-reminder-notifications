@@ -3,7 +3,7 @@ import { addTime, formatDate, getTimeDurationString, getTimeTypeEnumFromString, 
 import MyPlugin from './main';
 import { Reminder, TimeType } from './types';
 
-class optionsModal extends SuggestModal<string> {
+class OptionsModal extends SuggestModal<string> {
     options: string[] = [];
     selectedItem: string;
 
@@ -28,6 +28,8 @@ class optionsModal extends SuggestModal<string> {
 
     renderSuggestion(value: string, el: HTMLElement): void {
         el.innerText = value;
+        //Add code to check for something like "icon:alarm-clock|Name of modal option" and add the icon accordingly
+        //setIcon(el, 'layout-grid');
     }
 
     onNoSuggestion(): void {
@@ -53,7 +55,7 @@ class optionsModal extends SuggestModal<string> {
     }
 }
 
-export class newReminderModals extends optionsModal {
+export class NewReminderModals extends OptionsModal {
     constructor(app: App, private thisPlugin: MyPlugin, private modalType: number = 1) {
         super(app, []);
         this.options = this.getModalOptions(this.modalType);
@@ -137,7 +139,7 @@ export class newReminderModals extends optionsModal {
         if (this.selectedItem) {
             this.thisPlugin.modalResponse.push(this.selectedItem);
             if (this.getModalOptions(this.modalType) !== null) {
-                const modalSelect = new newReminderModals(this.app, this.thisPlugin, this.modalType);
+                const modalSelect = new NewReminderModals(this.app, this.thisPlugin, this.modalType);
                 modalSelect.open();
             } else {
                 //All modals have been responded to, now we can create the reminder
