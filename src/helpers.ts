@@ -8,6 +8,15 @@ export async function checkForReminders(plugin: MyPlugin) {
     //Need to load settings here (if Data.json has been updated) in case changed from another device; Obsidian does not reload variables otherwise
     //console.log('Checking if need to reload settings...');
     //console.time('Testing settings loading');
+    const syncPlugin = getSyncPlugin(plugin);
+    if (syncPlugin) {
+        if (syncPlugin.instance.syncing === true) {
+            console.log(`[${formatDate()}] ABORTING: Obsidian Sync is in the process of syncing. Skipping reminder check.`);
+            return;
+        } else {
+            //console.log("Obsidian Sync is NOT in the process of syncing. CONTINUE checking for reminders.");
+        }
+    }
     await reloadDataJsonIfNewer(plugin);
     //console.timeEnd('Testing settings loading');
     //console.log('');
@@ -221,7 +230,7 @@ export function getTimeTypeEnumFromString(TimeTypeString: string): TimeType {
     return findEnum;
 }
 
-export function formatDate(dateTimeNumber: number | Date, formatStr: string = "YYYY-MM-DD hh:mm.ss A"): string {
+export function formatDate(dateTimeNumber: number | Date = new Date(), formatStr: string = "YYYY-MM-DD hh:mm.ss A"): string {
     let dateTime: Date;
     if (typeof dateTimeNumber === "number") {
         dateTime = new Date(dateTimeNumber);
@@ -287,26 +296,29 @@ export function addTime(dateTimeNumber: number | Date, addType: TimeType, addVal
 export function getDeviceName(plugin: Plugin) {
     let deviceName = "";
     //Check if Obsidian Sync is enabled
-    const syncPlugin = plugin.app.internalPlugins.plugins["sync"];
+    const syncPlugin = getSyncPlugin(plugin);
     if (syncPlugin) {
         const syncPluginInst = syncPlugin.instance;
-        if (syncPlugin.enabled) {
-            deviceName = syncPluginInst.deviceName ? syncPluginInst.deviceName : syncPluginInst.getDefaultDeviceName();
-        }
+        deviceName = syncPluginInst.deviceName ? syncPluginInst.deviceName : syncPluginInst.getDefaultDeviceName();
     }
     if (!deviceName) { deviceName = createRandomHashId(); }
     return deviceName;
 }
 
-export function isObsidianSyncLoaded(plugin: Plugin): boolean {
-    let isObsidianSyncLoaded = false;
+function getSyncPlugin(plugin: Plugin) {
+    //Check if Obsidian Sync is enabled
     const syncPlugin = plugin.app.internalPlugins.plugins["sync"];
     if (syncPlugin) {
         if (syncPlugin.enabled) {
-            isObsidianSyncLoaded = true;
+            return syncPlugin;
         }
     }
-    return isObsidianSyncLoaded;
+    return null;
+}
+
+export function isObsidianSyncLoaded(plugin: Plugin): boolean {
+    const isSyncLoaded = getSyncPlugin(plugin) ? true : false;
+    return isSyncLoaded;
 }
 
 function createRandomHashId(charCt: number = 7): string {

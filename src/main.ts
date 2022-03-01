@@ -34,7 +34,7 @@ export default class MyPlugin extends Plugin {
         }
 
         // This creates an icon in the left ribbon.
-        // As icon options I like alarm-clock, alarm-plus, bell-plus
+        // Icon options I like alarm-clock, alarm-plus, bell-plus... see here: https://lucide.dev/
         const ribbonIconEl = this.addRibbonIcon('bell-plus', 'Reminder', (evt: MouseEvent) => {
             // Called when the user clicks the icon.
             this.modalResponse = [];
@@ -62,7 +62,8 @@ export default class MyPlugin extends Plugin {
 
         // When registering intervals, this function will automatically clear the interval when the plugin is disabled.
         const min = 0;
-        const sec = 10;
+        //I am running every 5 seconds (more often) instead of 10 seconds because I added a check for if Obsidian Sync is syncing then skip
+        const sec = 5;
         this.registerInterval(
             window.setInterval(async () => {
                 await checkForReminders(this);
