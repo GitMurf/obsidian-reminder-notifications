@@ -2,7 +2,7 @@ import { Plugin } from 'obsidian';
 import { MyPluginSettings } from 'src/types';
 import { NewReminderModals, SampleModal } from './ui';
 import { SampleSettingTab, DEFAULT_SETTINGS } from 'src/settings';
-import { checkForReminders, getDeviceName, isObsidianSyncLoaded, sleepDelay, updateDataJsonModVar } from './helpers';
+import { checkForReminders, createRandomHashId, getDeviceName, isObsidianSyncLoaded, sleepDelay, updateDataJsonModVar } from './helpers';
 
 const pluginName = 'Reminder Notifications';
 
@@ -12,17 +12,37 @@ export default class MyPlugin extends Plugin {
     deviceId: string;
     pluginFolderDir: string;
     lastLoadDataJsonModified: number;
+    pluginHashId: string;
 
     async onload() {
+        //NOT using an await here because don't want to hold up Obsidian loading overall
+        this.delayedPluginLoad();
+    }
+
+    async delayedPluginLoad() {
+        this.pluginHashId = createRandomHashId();
+        //Wait 3 seconds to allow Obsidian sync to load first
+        await sleepDelay(this, 3);
+        //Check if Obsidian sync is loaded and wait longer if not
         if (isObsidianSyncLoaded(this) === false) {
-            await sleepDelay(5);
+            await sleepDelay(this, 5);
+            //Check one more time and do one final check before moving on and letting the plugin load without Sync
             if (isObsidianSyncLoaded(this) === false) {
-                await sleepDelay(5);
+                await sleepDelay(this, 5);
             }
         }
+
+        //Before loading further check to see if the plugin instance is still loaded
+            //This prevents multiple instances of the plugin from being loaded like when hotreload plugin sometimes reloads multiple times in a row
+        if (this._loaded === false) {
+            console.log(`[${this.pluginHashId}]: This Plugin instance is now longer loaded after the sleep delay... aborting to avoid loading twice.`);
+            this.unload();
+            return;
+        }
+
         //Get (or create) the Device Name (Obsidian Sync) or randomly created device ID. Use to track if device has seen a notification
         this.deviceId = getDeviceName(this);
-        console.log(`loading plugin: ${pluginName} [${this.deviceId}]`);
+        console.log(`Loading plugin: ${pluginName} [Device: ${this.deviceId}] [Hash: ${this.pluginHashId}]`);
 
         //Set the dataJsonModified variable to track the last time the data.json file was modified and loaded
         this.pluginFolderDir = this.manifest.dir;
@@ -72,16 +92,16 @@ export default class MyPlugin extends Plugin {
     }
 
     onunload() {
-        console.log("Unloading plugin: " + pluginName);
+        console.log(`Unloading plugin: ${pluginName} [Device: ${this.deviceId}] [Hash: ${this.pluginHashId}]`);
     }
 
     async loadSettings() {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-        await updateDataJsonModVar(this, "Loaded settings: ");
+        await updateDataJsonModVar(this, `[${this.pluginHashId}] Loaded settings: `);
     }
 
     async saveSettings() {
         await this.saveData(this.settings);
-        await updateDataJsonModVar(this, "Saved settings: ");
+        await updateDataJsonModVar(this, `[${this.pluginHashId}] Saved settings: `);
     }
 }

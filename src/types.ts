@@ -2,7 +2,15 @@ declare module "obsidian" {
     interface WorkspaceLeaf {
         containerEl: HTMLElement;
     }
+    interface Plugin {
+        "_loaded": boolean;
+    }
     interface App {
+        plugins: {
+            plugins: {
+                "obsidian-reminder-notifications-DEV": Plugin;
+            };
+        };
         internalPlugins: {
             plugins: {
                 "sync": {

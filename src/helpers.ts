@@ -4,22 +4,15 @@ import { Reminder, TimeType } from "./types";
 
 export async function checkForReminders(plugin: MyPlugin) {
     const newDateTimeNumber = new Date().getTime();
-
     //Need to load settings here (if Data.json has been updated) in case changed from another device; Obsidian does not reload variables otherwise
-    //console.log('Checking if need to reload settings...');
-    //console.time('Testing settings loading');
     const syncPlugin = getSyncPlugin(plugin);
     if (syncPlugin) {
         if (syncPlugin.instance.syncing === true) {
-            console.log(`[${formatDate()}] ABORTING: Obsidian Sync is in the process of syncing. Skipping reminder check.`);
+            console.log(`[${formatDate()}] ABORTING: Obsidian Sync is in the process of syncing. Skipping reminder check. [${plugin.pluginHashId}]`);
             return;
-        } else {
-            //console.log("Obsidian Sync is NOT in the process of syncing. CONTINUE checking for reminders.");
         }
     }
     await reloadDataJsonIfNewer(plugin);
-    //console.timeEnd('Testing settings loading');
-    //console.log('');
 
     const myReminders = plugin.settings.reminders;
     //loop through all reminders
@@ -321,7 +314,7 @@ export function isObsidianSyncLoaded(plugin: Plugin): boolean {
     return isSyncLoaded;
 }
 
-function createRandomHashId(charCt: number = 7): string {
+export function createRandomHashId(charCt: number = 7): string {
     let result = '';
     const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
     const charactersLength = characters.length;
@@ -331,6 +324,7 @@ function createRandomHashId(charCt: number = 7): string {
     return result;
 }
 
-export async function sleepDelay(seconds: number): Promise<void> {
+export async function sleepDelay(plugin: MyPlugin, seconds: number): Promise<void> {
+    console.log(`[${formatDate()}] Sleeping for ${seconds} seconds. [${plugin.pluginHashId}]`);
     return new Promise(resolve => { setTimeout(resolve, seconds * 1000); });
 }
