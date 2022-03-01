@@ -1,4 +1,4 @@
-import { App, Modal, SuggestModal } from 'obsidian';
+import { App, Modal, setIcon, SuggestModal } from 'obsidian';
 import { addTime, formatDate, getTimeDurationString, getTimeTypeEnumFromString, getTimeTypeString } from './helpers';
 import MyPlugin from './main';
 import { Reminder, TimeType } from './types';
@@ -28,8 +28,6 @@ class OptionsModal extends SuggestModal<string> {
 
     renderSuggestion(value: string, el: HTMLElement): void {
         el.innerText = value;
-        //Add code to check for something like "icon:alarm-clock|Name of modal option" and add the icon accordingly
-        //setIcon(el, 'layout-grid');
     }
 
     onNoSuggestion(): void {
@@ -62,11 +60,35 @@ export class NewReminderModals extends OptionsModal {
         this.modalType++;
     }
 
+    renderSuggestion(value: string, el: HTMLElement): void {
+        let addingIcon = null;
+        let textValue = "";
+        if (value.startsWith('icon:')) {
+            const splitPipe = value.split('|');
+            const splitColon = splitPipe[0].split(':');
+            if (splitColon[0] === 'icon' && splitColon[1]) {
+                addingIcon = splitColon[1];
+                splitPipe.shift();
+                textValue = splitPipe.join('|');
+            }
+        }
+        if (addingIcon) {
+            const iconSpan = el.createSpan('modal-icon');
+            setIcon(iconSpan, addingIcon);
+            const textSpan = el.createSpan('modal-text');
+            textSpan.innerText = textValue;
+        } else {
+            el.innerText = value;
+        }
+        //Add code to check for something like "icon:alarm-clock|Name of modal option" and add the icon accordingly
+        //setIcon(el, 'layout-grid');
+    }
+
     getModalOptions(modalType: number): string[] {
         let modalOptions: string[] = null;
         switch (modalType) {
             case 1:
-                modalOptions = ['Reminder number one', 'Reminder number two', 'Reminder number three'];
+                modalOptions = ['Reminder number one', 'Reminder number two', 'Reminder number three', 'icon:cloud-lightning|Another one|more here too', 'Nothing here', 'icon:alarm-clock|This is an alarm!'];
                 break;
             case 2:
                 modalOptions = [getTimeTypeString(TimeType.minutes), getTimeTypeString(TimeType.hours), getTimeTypeString(TimeType.days), getTimeTypeString(TimeType.weeks), getTimeTypeString(TimeType.months), getTimeTypeString(TimeType.quarters), getTimeTypeString(TimeType.years)];
