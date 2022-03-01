@@ -1,1 +1,4 @@
-/* Nothing required yet */
+div.side-dock-ribbon-action[aria-label*="Reminder"] {
+    position: relative;
+    left: -1px;
+}

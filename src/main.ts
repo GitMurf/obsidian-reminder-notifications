@@ -34,7 +34,8 @@ export default class MyPlugin extends Plugin {
         }
 
         // This creates an icon in the left ribbon.
-        const ribbonIconEl = this.addRibbonIcon('clock', 'Reminder', (evt: MouseEvent) => {
+        // As icon options I like alarm-clock, alarm-plus, bell-plus
+        const ribbonIconEl = this.addRibbonIcon('bell-plus', 'Reminder', (evt: MouseEvent) => {
             // Called when the user clicks the icon.
             this.modalResponse = [];
             const modalSelect = new newReminderModals(this.app, this);
