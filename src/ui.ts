@@ -80,8 +80,6 @@ export class NewReminderModals extends OptionsModal {
         } else {
             el.innerText = value;
         }
-        //Add code to check for something like "icon:alarm-clock|Name of modal option" and add the icon accordingly
-        //setIcon(el, 'layout-grid');
     }
 
     getModalOptions(modalType: number): string[] {
