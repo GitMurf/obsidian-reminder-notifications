@@ -2,7 +2,7 @@ import { Plugin } from 'obsidian';
 import { MyPluginSettings } from 'src/types';
 import { NewReminderModals, SampleModal } from './ui';
 import { SampleSettingTab, DEFAULT_SETTINGS } from 'src/settings';
-import { checkForReminders, createRandomHashId, getDeviceName, isObsidianSyncLoaded, sleepDelay, updateDataJsonModVar } from './helpers';
+import { checkForReminders, createRandomHashId, formatDate, getDeviceName, isObsidianSyncLoaded, sleepDelay, updateDataJsonModVar } from './helpers';
 
 const pluginName = 'Reminder Notifications';
 
@@ -21,8 +21,8 @@ export default class MyPlugin extends Plugin {
 
     async delayedPluginLoad() {
         this.pluginHashId = createRandomHashId();
-        //Wait 3 seconds to allow Obsidian sync to load first
-        await sleepDelay(this, 3);
+        //Wait 20 seconds to allow Obsidian sync to load and sync
+        await sleepDelay(this, 20);
         //Check if Obsidian sync is loaded and wait longer if not
         if (isObsidianSyncLoaded(this) === false) {
             await sleepDelay(this, 5);
@@ -31,7 +31,6 @@ export default class MyPlugin extends Plugin {
                 await sleepDelay(this, 5);
             }
         }
-
         //Before loading further check to see if the plugin instance is still loaded
             //This prevents multiple instances of the plugin from being loaded like when hotreload plugin sometimes reloads multiple times in a row
         if (this._loaded === false) {
@@ -42,7 +41,7 @@ export default class MyPlugin extends Plugin {
 
         //Get (or create) the Device Name (Obsidian Sync) or randomly created device ID. Use to track if device has seen a notification
         this.deviceId = getDeviceName(this);
-        console.log(`Loading plugin: ${pluginName} [Device: ${this.deviceId}] [Hash: ${this.pluginHashId}]`);
+        console.log(`Loading plugin: ${pluginName} [Device: ${this.deviceId}] [Hash: ${this.pluginHashId}] ${formatDate()}`);
 
         //Set the dataJsonModified variable to track the last time the data.json file was modified and loaded
         this.pluginFolderDir = this.manifest.dir;
@@ -97,11 +96,11 @@ export default class MyPlugin extends Plugin {
 
     async loadSettings() {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-        await updateDataJsonModVar(this, `[${this.pluginHashId}] Loaded settings: `);
+        await updateDataJsonModVar(this, `[${this.pluginHashId}] [${formatDate()}] Loaded settings: `);
     }
 
     async saveSettings() {
         await this.saveData(this.settings);
-        await updateDataJsonModVar(this, `[${this.pluginHashId}] Saved settings: `);
+        await updateDataJsonModVar(this, `[${this.pluginHashId}] [${formatDate()}] Saved settings: `);
     }
 }
