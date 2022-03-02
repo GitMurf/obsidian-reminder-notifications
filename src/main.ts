@@ -79,10 +79,9 @@ export default class MyPlugin extends Plugin {
         // This adds a settings tab so the user can configure various aspects of the plugin
         this.addSettingTab(new SampleSettingTab(this.app, this));
 
-        // When registering intervals, this function will automatically clear the interval when the plugin is disabled.
         const min = 0;
-        //I am running every 5 seconds (more often) instead of 10 seconds because I added a check for if Obsidian Sync is syncing then skip
-        const sec = 5;
+        const sec = 10;
+        // When registering intervals, this function will automatically clear the interval when the plugin is disabled.
         this.registerInterval(
             window.setInterval(async () => {
                 await checkForReminders(this);

@@ -7,8 +7,13 @@ export async function checkForReminders(plugin: MyPlugin) {
     //Need to load settings here (if Data.json has been updated) in case changed from another device; Obsidian does not reload variables otherwise
     const syncPlugin = getSyncPlugin(plugin);
     if (syncPlugin) {
-        if (syncPlugin.instance.syncing === true) {
-            console.log(`[${formatDate()}] ABORTING: Obsidian Sync is in the process of syncing. Skipping reminder check. [${plugin.pluginHashId}]`);
+        //Using the syncStatus instead of the syncing state because for whatever reasons sometimes the syncing state is true even though syncStatus is "Fully synced"
+        const syncPluginSyncing = syncPlugin.instance.syncing;
+        const syncPluginStatus = syncPlugin.instance.syncStatus;
+        const syncPluginPaused = syncPlugin.instance.pause;
+        //if (syncPluginSyncing === true && syncPluginStatus !== "Fully synced") {
+        if (syncPluginStatus !== "Fully synced" && syncPluginStatus !== "Paused" && syncPluginStatus !== "Connecting to server") {
+            console.log(`[${formatDate()}] ABORTING: Obsidian Sync is in the process of syncing [Syncing: ${syncPluginSyncing}] [Status: ${syncPluginStatus}]. Skipping reminder check. [${plugin.pluginHashId}]`);
             return;
         }
     }
