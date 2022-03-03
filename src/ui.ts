@@ -159,7 +159,7 @@ export class NewReminderModals extends OptionsModal {
         super.onClose();
         if (this.selectedItem) {
             this.thisPlugin.modalResponse.push(this.selectedItem);
-            if (this.getModalOptions(this.modalType) !== null) {
+            if (this.getModalOptions(this.modalType).length > 0) {
                 const modalSelect = new NewReminderModals(this.app, this.thisPlugin, this.modalType);
                 modalSelect.open();
             } else {
