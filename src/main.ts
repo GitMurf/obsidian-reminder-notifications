@@ -22,14 +22,18 @@ export default class MyPlugin extends Plugin {
     async delayedPluginLoad() {
         this.pluginHashId = createRandomHashId();
         this.deviceId = this.pluginHashId;
-        //Wait 20 seconds to allow Obsidian sync to load and sync
-        await sleepDelay(this, 20);
-        //Check if Obsidian sync is loaded and wait longer if not
-        if (isObsidianSyncLoaded(this) === false) {
-            await sleepDelay(this, 5);
-            //Check one more time and do one final check before moving on and letting the plugin load without Sync
+        if (this.app.workspace.layoutReady) {
+            //console.log('layoutReady so no need to delay plugin load...');
+        } else {
+            //Wait 10 seconds to allow Obsidian sync to load and sync
+            await sleepDelay(this, 10);
+            //Check if Obsidian sync is loaded and wait longer if not
             if (isObsidianSyncLoaded(this) === false) {
                 await sleepDelay(this, 5);
+                //Check one more time and do one final check before moving on and letting the plugin load without Sync
+                if (isObsidianSyncLoaded(this) === false) {
+                    await sleepDelay(this, 5);
+                }
             }
         }
         //Before loading further check to see if the plugin instance is still loaded
