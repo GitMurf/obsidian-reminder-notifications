@@ -8,7 +8,7 @@ export const DEFAULT_SETTINGS: MyPluginSettings = {
         setting2: 2,
         setting3: 'three'
     },
-    lastUpdated: null,
+    lastUpdated: 0,
     reminders: [],
     archived: []
 }

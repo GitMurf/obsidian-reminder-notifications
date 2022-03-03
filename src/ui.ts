@@ -5,7 +5,7 @@ import { Reminder, TimeType } from './types';
 
 class OptionsModal extends SuggestModal<string> {
     options: string[] = [];
-    selectedItem: string;
+    selectedItem: string = "";
 
     constructor(app: App, private optionsArr: string[]) {
         super(app);
@@ -24,6 +24,7 @@ class OptionsModal extends SuggestModal<string> {
         } else {
             this.close();
         }
+        return [];
     }
 
     renderSuggestion(value: string, el: HTMLElement): void {
@@ -45,7 +46,7 @@ class OptionsModal extends SuggestModal<string> {
     }
 
     lightenBackground() {
-        let modalBg: HTMLElement = this.containerEl.querySelector('.modal-bg');
+        let modalBg: HTMLElement = this.containerEl.querySelector('.modal-bg') as HTMLElement;
         if (modalBg) {
             modalBg.style.backgroundColor = '#00000029';
         }
@@ -83,7 +84,7 @@ export class NewReminderModals extends OptionsModal {
     }
 
     getModalOptions(modalType: number): string[] {
-        let modalOptions: string[] = null;
+        let modalOptions: string[] = [];
         switch (modalType) {
             case 1:
                 modalOptions = ['Reminder number one', 'Reminder number two', 'Reminder number three', 'icon:cloud-lightning|Another one|more here too', 'Nothing here', 'icon:alarm-clock|This is an alarm!'];
@@ -142,7 +143,7 @@ export class NewReminderModals extends OptionsModal {
             remindPrev: [],
             recurring: null,
             remind: [],
-            completed: null,
+            completed: 0,
             seen: [],
             notes: `[${this.thisPlugin.deviceId}] Created reminder at ${formatDate(dtTimeUID)}\nNext reminder in ${getTimeDurationString(howLong, timeTypeEnum)} at ${formatDate(nextReminder)}`,
         };

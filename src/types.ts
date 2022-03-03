@@ -7,9 +7,7 @@ declare module "obsidian" {
     }
     interface App {
         plugins: {
-            plugins: {
-                "obsidian-reminder-notifications-DEV": Plugin;
-            };
+            plugins: Record<string, Plugin>;
         };
         internalPlugins: {
             plugins: {
@@ -83,7 +81,7 @@ export interface Reminder {
     content: string;
     remindNext: number;
     remindPrev: number[];
-    recurring: Recurrence;
+    recurring: Recurrence | null;
     remind: Alert[];
     completed: number;
     seen: string[];

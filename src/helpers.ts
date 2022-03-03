@@ -2,16 +2,30 @@ import { Notice, Plugin, Stat } from "obsidian";
 import MyPlugin from "./main";
 import { Reminder, TimeType } from "./types";
 
-export async function checkForReminders(plugin: MyPlugin) {
+export async function checkForReminders(plugin: MyPlugin, myIntervalId: number): Promise<void> {
     const newDateTimeNumber = new Date().getTime();
+
+    //Check if the plugin instance is still loaded
+    //Trying to avoid issues with multiple plugins instances loaded or setIntervals being orphaned running
+    const pluginId = plugin.manifest.id;
+    //const foundPlugin = plugin.app.plugins.plugins.find((p) => p.manifest.id === pluginId) as MyPlugin;
+    const communityPluginsArr = Object.values(plugin.app.plugins.plugins);
+    const foundPlugin = communityPluginsArr.find((p) => p.manifest.id === pluginId) as MyPlugin;
+    const foundPluginHash = foundPlugin ? foundPlugin.pluginHashId : "";
+    if (plugin._loaded === false || plugin.pluginHashId !== foundPluginHash) {
+        console.log(`[${plugin.pluginHashId}]: Plugin instance hash does not match [${foundPluginHash}]. Stopping SetInterval.`);
+        clearInterval(myIntervalId);
+        plugin.unload();
+        return;
+    }
+
     //Need to load settings here (if Data.json has been updated) in case changed from another device; Obsidian does not reload variables otherwise
     const syncPlugin = getSyncPlugin(plugin);
     if (syncPlugin) {
-        //Using the syncStatus instead of the syncing state because for whatever reasons sometimes the syncing state is true even though syncStatus is "Fully synced"
+        //Using the syncStatus instead of the syncing state because for whatever reasons sometimes the syncing state is set to "true" even though syncStatus is "Fully synced"
         const syncPluginSyncing = syncPlugin.instance.syncing;
         const syncPluginStatus = syncPlugin.instance.syncStatus;
         const syncPluginPaused = syncPlugin.instance.pause;
-        //if (syncPluginSyncing === true && syncPluginStatus !== "Fully synced") {
         if (syncPluginStatus !== "Fully synced" && syncPluginStatus !== "Paused" && syncPluginStatus !== "Connecting to server") {
             console.log(`[${formatDate()}] ABORTING: Obsidian Sync is in the process of syncing [Syncing: ${syncPluginSyncing}] [Status: ${syncPluginStatus}]. Skipping reminder check. [${plugin.pluginHashId}]`);
             return;
@@ -27,7 +41,7 @@ export async function checkForReminders(plugin: MyPlugin) {
         const reminder = myReminders[i];
         const seenAlready = reminder.seen.includes(plugin.deviceId);
         const completedAlready = reminder.completed;
-        if (completedAlready === null) {
+        if (completedAlready === null || completedAlready === undefined || completedAlready === 0) {
             //Not marked as completed yet
             //Whether "seen" or not, still should just apply as if hadn't been seen before even if re-show a notification
                 //In theory if not marked as complete then should not be seen yet... accounting for fluke scenarios just in case to show again
@@ -93,6 +107,7 @@ function reminderShowNotification(plugin: MyPlugin, reminder: Reminder, remIndex
     const newNote = `[${plugin.deviceId}] Completed reminder at ${formatDate(completedTime)}`;
     const updatedNote = reminder.notes ? `${reminder.notes}\n${newNote}` : newNote;
     reminder.notes = updatedNote;
+    console.log(reminder);
     console.log(reminder.notes);
 }
 
@@ -125,8 +140,6 @@ async function reloadDataJsonIfNewer(plugin: MyPlugin): Promise<void> {
     const getDataJsonFileStats = await getFileStats(plugin, dataJsonPath);
     const dataJsonModified = getDataJsonFileStats ? getDataJsonFileStats.mtime : 0;
     const modDiff = dataJsonModified - lastDataJsonLoad;
-    //console.log(`FILE: ${formatDate(dataJsonModified)}`);
-    //console.log(` VAR: ${formatDate(lastDataJsonLoad)}`);
     if (modDiff > 0) {
         console.log(`Data.json modified time is ${Math.floor(modDiff / 1000)} seconds newer than your last Loaded Variables. Loading data.json settings now.`);
         await plugin.loadSettings();
@@ -144,7 +157,7 @@ export async function updateDataJsonModVar(plugin: MyPlugin, prependStr: string 
     }
 }
 
-async function getFileStats(plugin: Plugin, filePath: string): Promise<Stat> {
+async function getFileStats(plugin: Plugin, filePath: string): Promise<Stat | null> {
     const fileStats = await plugin.app.vault.adapter.stat(filePath);
     return fileStats;
 }
@@ -192,7 +205,7 @@ export function getTimeTypeString(ttEnum: TimeType): string {
 }
 
 export function getTimeTypeEnumFromString(TimeTypeString: string): TimeType {
-    let findEnum: TimeType = null;
+    let findEnum: TimeType;
     switch (TimeTypeString) {
         case getTimeTypeString(TimeType.milliseconds):
             findEnum = TimeType.milliseconds;
