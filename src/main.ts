@@ -1,7 +1,7 @@
 import { Plugin } from 'obsidian';
-import { MyPluginSettings } from 'src/types';
+import { MyPluginSettings } from './types';
 import { NewReminderModals, SampleModal } from './ui';
-import { SampleSettingTab, DEFAULT_SETTINGS } from 'src/settings';
+import { SampleSettingTab, DEFAULT_SETTINGS } from './settings';
 import { checkForReminders, createRandomHashId, formatDate, getDeviceName, isObsidianSyncLoaded, sleepDelay, updateDataJsonModVar } from './helpers';
 
 const pluginName = 'Reminder Notifications';
