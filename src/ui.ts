@@ -1,4 +1,4 @@
-import { App, Modal, Notice, Plugin_2, setIcon, SuggestModal } from 'obsidian';
+import { App, Modal, nldPlugin, Notice, Plugin_2, setIcon, SuggestModal } from 'obsidian';
 import { addTime, formatDate, getTimeDurationString, getTimeTypeEnumFromString, getTimeTypeString } from './helpers';
 import MyPlugin from './main';
 import { Reminder, TimeType } from './types';
@@ -326,7 +326,18 @@ class NewReminderModals extends OptionsModal {
         } else {
             if (modalResponse[2].indexOf("⏰") > -1) {
                 const newString = modalResponse[2].replace("⏰", "").trim();
-                nextReminder = window.moment(newString, "hh:mm A").valueOf();
+                const nlDatesPlugin: nldPlugin = this.thisPlugin.app.plugins.getPlugin('nldates-obsidian') as nldPlugin;
+                if (nlDatesPlugin) {
+                    const nlDate = nlDatesPlugin.parseDate(newString);
+                    if (nlDate.formattedString !== 'Invalid date') {
+                        nextReminder = nlDate.date.getTime();
+                    } else {
+                        new Notice(`Invalid date: ${newString}`, 10000);
+                        return;
+                    }
+                } else {
+                    nextReminder = window.moment(newString, "hh:mm A").valueOf();
+                }
             } else if (modalResponse[2].indexOf("Today at") > -1) {
                 nextReminder = window.moment(modalResponse[2], "[Today at] hh:mm A").valueOf();
             } else {

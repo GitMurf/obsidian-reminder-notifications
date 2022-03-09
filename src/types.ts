@@ -1,3 +1,5 @@
+import * as momentJs from "moment";
+
 declare module "obsidian" {
     interface WorkspaceLeaf {
         containerEl: HTMLElement;
@@ -8,6 +10,7 @@ declare module "obsidian" {
     interface App {
         plugins: {
             plugins: Record<string, Plugin>;
+            getPlugin(name: string): Plugin;
         };
         internalPlugins: {
             plugins: {
@@ -45,6 +48,13 @@ declare module "obsidian" {
     }
     interface Notice {
         noticeEl: HTMLDivElement;
+    }
+    interface nldPlugin extends Plugin {
+        parseDate(dtString: string): {
+            date: Date;
+            formattedString: string;
+            moment: momentJs.Moment;
+        }
     }
 }
 
