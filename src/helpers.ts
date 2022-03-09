@@ -1,6 +1,7 @@
 import { Notice, Plugin, Stat } from "obsidian";
 import MyPlugin from "./main";
 import { Reminder, TimeType } from "./types";
+import { InputModal, ReminderNotice } from "./ui";
 
 export async function checkForReminders(plugin: MyPlugin, myIntervalId: number): Promise<void> {
     const newDateTimeNumber = new Date().getTime();
@@ -50,7 +51,7 @@ export async function checkForReminders(plugin: MyPlugin, myIntervalId: number):
             if (nextReminder) {
                 if (nextReminder < newDateTimeNumber && nextReminder > 0) {
                     ctrNew++;
-                    reminderShowNotification(plugin, reminder, i, newDateTimeNumber);
+                    reminderShowNotification(plugin, reminder, newDateTimeNumber);
                     const archived = reminderArchive(plugin, reminder, i);
                     if (archived) {
                         ctrArchived++;
@@ -72,7 +73,7 @@ export async function checkForReminders(plugin: MyPlugin, myIntervalId: number):
                 if (nextReminder) {
                     if (nextReminder < newDateTimeNumber && nextReminder > 0) {
                         ctrNew++;
-                        reminderShowNotification(plugin, reminder, i, newDateTimeNumber);
+                        reminderShowNotification(plugin, reminder, newDateTimeNumber);
                         const archived = reminderArchive(plugin, reminder, i);
                         if (archived) {
                             ctrArchived++;
@@ -96,10 +97,10 @@ function reminderMarkComplete(plugin: MyPlugin, reminder: Reminder, completedTim
     reminder.completed = completedTime;
 }
 
-function reminderShowNotification(plugin: MyPlugin, reminder: Reminder, remIndex: number, completedTime: number) {
+function reminderShowNotification(plugin: MyPlugin, reminder: Reminder, completedTime: number) {
     reminderMarkComplete(plugin, reminder, completedTime);
     const nextReminder = reminder.remindNext;
-    showObsidianNotice(`${formatDate(nextReminder, "hh:mm A")}: ${reminder.title}`, (60 * 60));
+    new ReminderNotice(`${reminder.title}`, nextReminder, 60 * 60);
     reminder.modifiedAt = reminder.completed;
     reminder.remindPrev.push(reminder.remindNext);
     //reminder.remindNext = reminder.remindNext + (1 * 60000);
@@ -160,44 +161,6 @@ export async function updateDataJsonModVar(plugin: MyPlugin, prependStr: string 
 async function getFileStats(plugin: Plugin, filePath: string): Promise<Stat | null> {
     const fileStats = await plugin.app.vault.adapter.stat(filePath);
     return fileStats;
-}
-
-function showObsidianNotice(title: string, showTimeSeconds: number = 30) {
-    const showTimeMs = showTimeSeconds * 1000;
-    let newDocFrag = createFragment();
-    let newDivPar = newDocFrag.createDiv();
-
-    let spanParDiv = newDivPar.createDiv();
-    let newSpan = spanParDiv.createSpan();
-    newSpan.setText(title);
-    newSpan.style.fontWeight = "bold";
-    spanParDiv.createEl("br");
-    newSpan = spanParDiv.createSpan();
-    newSpan.setText("This is the second span");
-    spanParDiv.createEl("br");
-    spanParDiv.createEl("br");
-
-    let buttonParDiv = newDivPar.createDiv();
-    let newButton = buttonParDiv.createEl("button");
-    newButton.setText("Test Button");
-    newButton.onClickEvent(() => {
-        console.log("Button clicked");
-    });
-    newButton = buttonParDiv.createEl("button");
-    newButton.setText("Close Notification");
-
-    const newNotice = new Notice(newDocFrag, showTimeMs);
-    newNotice.noticeEl.style.maxWidth = "unset";
-    newNotice.noticeEl.style.cursor = "unset";
-    const noticeHide = newNotice.hide;
-    newNotice.hide = function () {
-        //Do nothing unless the buttons are clicked
-    }
-    newButton.onClickEvent(() => {
-        console.log("Button 2 clicked");
-        newNotice.hide = noticeHide;
-        newNotice.hide();
-    });
 }
 
 export function getTimeTypeString(ttEnum: TimeType): string {

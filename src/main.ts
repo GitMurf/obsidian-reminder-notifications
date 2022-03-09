@@ -1,6 +1,6 @@
 import { Plugin } from 'obsidian';
 import { MyPluginSettings } from './types';
-import { NewReminderModals, SampleModal } from './ui';
+import { InputModal } from './ui';
 import { SampleSettingTab, DEFAULT_SETTINGS } from './settings';
 import { checkForReminders, createRandomHashId, formatDate, getDeviceName, isObsidianSyncLoaded, sleepDelay, updateDataJsonModVar } from './helpers';
 
@@ -62,8 +62,7 @@ export default class MyPlugin extends Plugin {
         const ribbonIconEl = this.addRibbonIcon('bell-plus', 'Reminder', (evt: MouseEvent) => {
             // Called when the user clicks the icon.
             this.modalResponse = [];
-            const modalSelect = new NewReminderModals(this.app, this);
-            modalSelect.open();
+            new InputModal(this).open();
         });
 
         // This adds a status bar item to the bottom of the app. Does not work on mobile apps.
@@ -77,7 +76,7 @@ export default class MyPlugin extends Plugin {
             id: 'open-sample-modal-simple',
             name: 'Open sample modal (simple)',
             callback: () => {
-                new SampleModal(this.app).open();
+                //new SampleModal(this.app).open();
             }
         });
 

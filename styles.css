@@ -7,3 +7,7 @@ div.prompt-results > div.suggestion-item > span.modal-icon {
     left: 10px;
     top: 7px;
 }
+body > div.modal-container.reminder-input-modal input {
+    width: 30vw;
+    margin-right: 20px;
+}

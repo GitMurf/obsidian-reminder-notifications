@@ -1,7 +1,102 @@
-import { App, Modal, setIcon, SuggestModal } from 'obsidian';
+import { App, Modal, Notice, Plugin_2, setIcon, SuggestModal } from 'obsidian';
 import { addTime, formatDate, getTimeDurationString, getTimeTypeEnumFromString, getTimeTypeString } from './helpers';
 import MyPlugin from './main';
 import { Reminder, TimeType } from './types';
+
+export class InputModal extends Modal {
+    constructor(private plugin: MyPlugin) {
+        super(plugin.app);
+    }
+
+    onOpen() {
+        this.contentEl.empty();
+        this.containerEl.addClass('reminder-input-modal');
+        this.titleEl.setText('New Reminder');
+        const inputEl = this.contentEl.createEl(
+            'input',
+            {
+                type: 'text',
+                value: '',
+                attr: {
+                    placeholder: 'Add a reminder note...'
+                }
+            }
+        );
+        inputEl.focus();
+        //inputEl.select();
+        const createButtonEl = this.contentEl.createEl('button', { text: 'Create' });
+
+        inputEl.addEventListener('keyup', (e: KeyboardEvent) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                createButtonEl.click();
+            }
+        });
+
+        this.plugin.modalResponse[0] = '';
+        createButtonEl.addEventListener('click', () => {
+            this.plugin.modalResponse[0] = inputEl.value;
+            this.close();
+        });
+    }
+
+    onClose() {
+        this.contentEl.empty();
+        if (this.plugin.modalResponse[0] === '') {
+            console.log(`Closed the modal input without a response... EXITING!`);
+        } else {
+            const modalSelect = new NewReminderModals(this.plugin);
+            modalSelect.open();
+        }
+    }
+}
+
+export class ReminderNotice extends Notice {
+    constructor(title: string, dateTime: number | Date, seconds?: number) {
+        let milliseconds: number | undefined = undefined;
+        let newDocFrag = createFragment();
+        let dateString = formatDate(dateTime, "hh:mm A [on] MMM Do");
+
+        if (seconds) {
+            milliseconds = seconds * 1000;
+        }
+        let newDivPar = newDocFrag.createDiv();
+        let spanParDiv = newDivPar.createDiv();
+        let newSpan1 = spanParDiv.createSpan();
+        spanParDiv.createEl("br");
+        let newSpan2 = spanParDiv.createSpan();
+        spanParDiv.createEl("br");
+        spanParDiv.createEl("br");
+        let buttonParDiv = newDivPar.createDiv();
+        let newButton1 = buttonParDiv.createEl("button");
+        let newButton2 = buttonParDiv.createEl("button");
+
+        super(newDocFrag, milliseconds);
+
+        newSpan1.setText(title);
+        newSpan1.style.fontWeight = "bold";
+        newSpan2.setText(dateString);
+        newButton1.setText("Snooze");
+        newButton1.onClickEvent(() => {
+            console.log("Snooze button clicked");
+        });
+        newButton2.setText("Close");
+        newButton2.onClickEvent(() => {
+            console.log("Close button clicked");
+            this.closeNotice();
+        });
+        this.noticeEl.style.maxWidth = "unset";
+        this.noticeEl.style.cursor = "unset";
+    }
+
+    hide(): void {
+        //Do nothing... prevents closing on click other than close button
+    }
+
+    closeNotice(): void {
+        super.hide();
+    }
+}
 
 class OptionsModal extends SuggestModal<string> {
     options: string[] = [];
@@ -54,9 +149,9 @@ class OptionsModal extends SuggestModal<string> {
     }
 }
 
-export class NewReminderModals extends OptionsModal {
-    constructor(app: App, private thisPlugin: MyPlugin, private modalType: number = 1) {
-        super(app, []);
+class NewReminderModals extends OptionsModal {
+    constructor(private thisPlugin: MyPlugin, private modalType: number = 1) {
+        super(thisPlugin.app, []);
         this.options = this.getModalOptions(this.modalType);
         this.modalType++;
     }
@@ -87,12 +182,9 @@ export class NewReminderModals extends OptionsModal {
         let modalOptions: string[] = [];
         switch (modalType) {
             case 1:
-                modalOptions = ['Reminder number one', 'Reminder number two', 'Reminder number three', 'icon:cloud-lightning|Another one|more here too', 'Nothing here', 'icon:alarm-clock|This is an alarm!'];
-                break;
-            case 2:
                 modalOptions = [getTimeTypeString(TimeType.minutes), getTimeTypeString(TimeType.hours), getTimeTypeString(TimeType.days), getTimeTypeString(TimeType.weeks), getTimeTypeString(TimeType.months), getTimeTypeString(TimeType.quarters), getTimeTypeString(TimeType.years)];
                 break;
-            case 3:
+            case 2:
                 const prevItem = this.thisPlugin.modalResponse[this.thisPlugin.modalResponse.length - 1];
                 switch (prevItem) {
                     case 'minutes':
@@ -160,28 +252,12 @@ export class NewReminderModals extends OptionsModal {
         if (this.selectedItem) {
             this.thisPlugin.modalResponse.push(this.selectedItem);
             if (this.getModalOptions(this.modalType).length > 0) {
-                const modalSelect = new NewReminderModals(this.app, this.thisPlugin, this.modalType);
+                const modalSelect = new NewReminderModals(this.thisPlugin, this.modalType);
                 modalSelect.open();
             } else {
                 //All modals have been responded to, now we can create the reminder
                 this.createReminderFromModals(this.thisPlugin.modalResponse);
             }
         }
-    }
-}
-
-export class SampleModal extends Modal {
-    constructor(app: App) {
-        super(app);
-    }
-
-    onOpen() {
-        const { contentEl } = this;
-        contentEl.setText('Woah!');
-    }
-
-    onClose() {
-        const { contentEl } = this;
-        contentEl.empty();
     }
 }
