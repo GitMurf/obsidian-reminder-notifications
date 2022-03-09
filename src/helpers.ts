@@ -1,7 +1,7 @@
-import { Notice, Plugin, Stat } from "obsidian";
+import { Plugin, Stat } from "obsidian";
 import MyPlugin from "./main";
 import { Reminder, TimeType } from "./types";
-import { InputModal, ReminderNotice } from "./ui";
+import { ReminderNotice } from "./ui";
 
 export async function checkForReminders(plugin: MyPlugin, myIntervalId: number): Promise<void> {
     const newDateTimeNumber = new Date().getTime();
@@ -101,6 +101,7 @@ function reminderShowNotification(plugin: MyPlugin, reminder: Reminder, complete
     reminderMarkComplete(plugin, reminder, completedTime);
     const nextReminder = reminder.remindNext;
     new ReminderNotice(`${reminder.title}`, nextReminder, 60 * 60);
+    desktopNotification(plugin, reminder);
     reminder.modifiedAt = reminder.completed;
     reminder.remindPrev.push(reminder.remindNext);
     //reminder.remindNext = reminder.remindNext + (1 * 60000);
@@ -110,6 +111,32 @@ function reminderShowNotification(plugin: MyPlugin, reminder: Reminder, complete
     reminder.notes = updatedNote;
     console.log(reminder);
     console.log(reminder.notes);
+}
+
+function desktopNotification(plugin: MyPlugin, reminder: Reminder) {
+    const notTitle = reminder.title;
+    const notOptions = {
+        body: formatDate(reminder.remindNext),
+        icon: "https://avatars.githubusercontent.com/u/65011256?s=200&v=4",
+        silent: false,
+        tag: `${reminder.id}`,
+    }
+    const notificationObj = new Notification(notTitle, notOptions);
+    //notificationObj.newTest = "log me now";
+    notificationObj.onclick = function (event) {
+        event.preventDefault(); // prevent the browser from focusing the Notification's tab
+        console.log(`this is a click test: ${notificationObj.tag}`);
+        console.log(this);
+        //console.log(this.newTest);
+        //window.open('obsidian://open?vault=RoamImport_2021_02_18&file=new%2FUntitled%206', '_blank');
+    };
+
+    notificationObj.onclose = function (event) {
+        event.preventDefault(); // prevent the browser from focusing the Notification's tab
+        console.log(`this is a CLOSE test: ${notificationObj.tag}`);
+        console.log(this);
+        //window.open('obsidian://open?vault=RoamImport_2021_02_18&file=new%2FUntitled%206', '_blank');
+    };
 }
 
 function reminderArchive(plugin: MyPlugin, reminder: Reminder, remIndex: number): boolean {
