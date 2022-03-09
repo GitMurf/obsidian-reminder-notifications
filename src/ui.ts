@@ -35,19 +35,19 @@ export class InputModal extends Modal {
 
         this.plugin.modalResponse[0] = '';
         createButtonEl.addEventListener('click', () => {
-            this.plugin.modalResponse[0] = inputEl.value;
             this.close();
+            this.plugin.modalResponse[0] = inputEl.value;
+            if (inputEl.value === '') {
+                console.log(`Closed the modal input without a response... EXITING!`);
+            } else {
+                new NewReminderModals(this.plugin).open();
+            }
         });
     }
 
     onClose() {
+        super.onClose();
         this.contentEl.empty();
-        if (this.plugin.modalResponse[0] === '') {
-            console.log(`Closed the modal input without a response... EXITING!`);
-        } else {
-            const modalSelect = new NewReminderModals(this.plugin);
-            modalSelect.open();
-        }
     }
 }
 
@@ -156,6 +156,15 @@ class NewReminderModals extends OptionsModal {
         this.modalType++;
     }
 
+    getSuggestions(query: string): string[] {
+        const options = super.getSuggestions(query);
+        if (options.length > 0) {
+            return options;
+        } else {
+            return [`${query} ⏰`];
+        }
+    }
+
     renderSuggestion(value: string, el: HTMLElement): void {
         let addingIcon = null;
         let textValue = "";
@@ -175,6 +184,19 @@ class NewReminderModals extends OptionsModal {
             textSpan.innerText = textValue;
         } else {
             el.innerText = value;
+        }
+    }
+
+    onChooseSuggestion(item: string, _: MouseEvent | KeyboardEvent): void {
+        super.onChooseSuggestion(item, _);
+        if (this.selectedItem) {
+            this.thisPlugin.modalResponse.push(this.selectedItem);
+            if (this.getModalOptions(this.modalType).length > 0) {
+                new NewReminderModals(this.thisPlugin, this.modalType).open();
+            } else {
+                //All modals have been responded to, now we can create the reminder
+                this.createReminderFromModals(this.thisPlugin.modalResponse);
+            }
         }
     }
 
@@ -198,68 +220,68 @@ class NewReminderModals extends OptionsModal {
                         let myDateOpt = new Date();
                         if (curMinute < 24) {
                             myDateOpt.setMinutes(25);
-                            modalOptions.push(formatDate(myDateOpt, "hh:mm A"));
+                            modalOptions.push(formatDate(myDateOpt, "[Today at] hh:mm A"));
                         }
 
                         myDateOpt = new Date();
                         if (curMinute < 54) {
                             myDateOpt.setMinutes(55);
-                            modalOptions.push(formatDate(myDateOpt, "hh:mm A"));
+                            modalOptions.push(formatDate(myDateOpt, "[Today at] hh:mm A"));
                         }
 
                         myDateOpt = new Date();
                         if (curMinute < 10) {
                             myDateOpt.setMinutes(15);
-                            modalOptions.push(formatDate(myDateOpt, "hh:mm A"));
+                            modalOptions.push(formatDate(myDateOpt, "[Today at] hh:mm A"));
                             myDateOpt.setMinutes(30);
-                            modalOptions.push(formatDate(myDateOpt, "hh:mm A"));
+                            modalOptions.push(formatDate(myDateOpt, "[Today at] hh:mm A"));
                             myDateOpt.setMinutes(45);
-                            modalOptions.push(formatDate(myDateOpt, "hh:mm A"));
+                            modalOptions.push(formatDate(myDateOpt, "[Today at] hh:mm A"));
                             myDateOpt.setMinutes(0);
                             myDateOpt.setHours(curHour + 1);
-                            modalOptions.push(formatDate(myDateOpt, "hh:mm A"));
+                            modalOptions.push(formatDate(myDateOpt, "[Today at] hh:mm A"));
                         } else if (curMinute < 25) {
                             myDateOpt.setMinutes(30);
-                            modalOptions.push(formatDate(myDateOpt, "hh:mm A"));
+                            modalOptions.push(formatDate(myDateOpt, "[Today at] hh:mm A"));
                             myDateOpt.setMinutes(45);
-                            modalOptions.push(formatDate(myDateOpt, "hh:mm A"));
+                            modalOptions.push(formatDate(myDateOpt, "[Today at] hh:mm A"));
                             myDateOpt.setMinutes(0);
                             myDateOpt.setHours(curHour + 1);
-                            modalOptions.push(formatDate(myDateOpt, "hh:mm A"));
+                            modalOptions.push(formatDate(myDateOpt, "[Today at] hh:mm A"));
                         } else if (curMinute < 40) {
                             myDateOpt.setMinutes(45);
-                            modalOptions.push(formatDate(myDateOpt, "hh:mm A"));
+                            modalOptions.push(formatDate(myDateOpt, "[Today at] hh:mm A"));
                             myDateOpt.setMinutes(0);
                             myDateOpt.setHours(curHour + 1);
-                            modalOptions.push(formatDate(myDateOpt, "hh:mm A"));
+                            modalOptions.push(formatDate(myDateOpt, "[Today at] hh:mm A"));
                         } else if (curMinute < 55) {
                             myDateOpt.setMinutes(0);
                             myDateOpt.setHours(curHour + 1);
-                            modalOptions.push(formatDate(myDateOpt, "hh:mm A"));
+                            modalOptions.push(formatDate(myDateOpt, "[Today at] hh:mm A"));
                         }
 
                         myDateOpt = new Date();
                         myDateOpt.setMinutes(0);
                         myDateOpt.setHours(8);
                         myDateOpt.setDate(curDay + 1);
-                        modalOptions.push(formatDate(myDateOpt, "MMM Do [at] hh:mm A"));
+                        modalOptions.push(formatDate(myDateOpt, "MMM Do (ddd) [at] hh:mm A"));
 
                         myDateOpt = new Date();
                         myDateOpt.setMinutes(0);
                         myDateOpt.setHours(9);
                         myDateOpt.setDate(curDay + 1);
-                        modalOptions.push(formatDate(myDateOpt, "MMM Do [at] hh:mm A"));
+                        modalOptions.push(formatDate(myDateOpt, "MMM Do (ddd) [at] hh:mm A"));
 
                         myDateOpt = new Date();
                         myDateOpt.setMinutes(0);
                         myDateOpt.setHours(10);
                         myDateOpt.setDate(curDay + 1);
-                        modalOptions.push(formatDate(myDateOpt, "MMM Do [at] hh:mm A"));
+                        modalOptions.push(formatDate(myDateOpt, "MMM Do (ddd) [at] hh:mm A"));
 
                         myDateOpt = new Date();
                         myDateOpt.setMinutes(0);
                         myDateOpt.setDate(curDay + 1);
-                        modalOptions.push(formatDate(myDateOpt, "MMM Do [at] hh:mm A"));
+                        modalOptions.push(formatDate(myDateOpt, "MMM Do (ddd) [at] hh:mm A"));
 
                         break;
                     case 'minutes':
@@ -302,10 +324,13 @@ class NewReminderModals extends OptionsModal {
             }
             myNote = ` in ${getTimeDurationString(howLong, timeTypeEnum)}`;
         } else {
-            if (modalResponse[2].indexOf(" at ") > -1) {
-                nextReminder = window.moment(modalResponse[2], "MMM Do [at] hh:mm A").valueOf();
+            if (modalResponse[2].indexOf("⏰") > -1) {
+                const newString = modalResponse[2].replace("⏰", "").trim();
+                nextReminder = window.moment(newString, "hh:mm A").valueOf();
+            } else if (modalResponse[2].indexOf("Today at") > -1) {
+                nextReminder = window.moment(modalResponse[2], "[Today at] hh:mm A").valueOf();
             } else {
-                nextReminder = window.moment(modalResponse[2], "hh:mm A").valueOf();
+                nextReminder = window.moment(modalResponse[2], "MMM Do (ddd) [at] hh:mm A").valueOf();
             }
         }
         const remindTitle = modalResponse[0];
@@ -331,19 +356,5 @@ class NewReminderModals extends OptionsModal {
         await this.thisPlugin.saveSettings();
         //console.log("Reminder created and saved");
         console.log(reminder);
-    }
-
-    onClose(): void {
-        super.onClose();
-        if (this.selectedItem) {
-            this.thisPlugin.modalResponse.push(this.selectedItem);
-            if (this.getModalOptions(this.modalType).length > 0) {
-                const modalSelect = new NewReminderModals(this.thisPlugin, this.modalType);
-                modalSelect.open();
-            } else {
-                //All modals have been responded to, now we can create the reminder
-                this.createReminderFromModals(this.thisPlugin.modalResponse);
-            }
-        }
     }
 }
