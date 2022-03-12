@@ -2,12 +2,14 @@ div.side-dock-ribbon-action[aria-label*="Reminder"] {
     position: relative;
     left: -1px;
 }
-div.prompt-results > div.suggestion-item > span.modal-icon {
+
+div.prompt-results>div.suggestion-item>span.modal-icon {
     position: absolute;
     left: 10px;
     top: 7px;
 }
-body > div.modal-container.reminder-input-modal input {
+
+body>div.modal-container.reminder-input-modal input {
     width: 30vw;
     margin-right: 20px;
 }
