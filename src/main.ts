@@ -1,10 +1,12 @@
-import { Plugin } from 'obsidian';
+import { Plugin, WorkspaceLeaf } from 'obsidian';
 import { MyPluginSettings } from './types';
-import { InputModal } from './ui';
+import { InputModal, ReminderNotificationsView } from './ui';
 import { SampleSettingTab, DEFAULT_SETTINGS } from './settings';
 import { checkForReminders, createRandomHashId, formatDate, getDeviceName, isObsidianSyncLoaded, sleepDelay, updateDataJsonModVar } from './helpers';
 
-const pluginName = 'Reminder Notifications';
+export const pluginName = 'Reminder Notifications';
+export const VIEW_TYPE = 'reminder-notifications';
+export const VIEW_ICON = 'bell-ring';
 
 export default class MyPlugin extends Plugin {
     settings: MyPluginSettings = DEFAULT_SETTINGS;
@@ -90,10 +92,26 @@ export default class MyPlugin extends Plugin {
             checkForReminders(this, myInterval);
         }, (min * 60 * 1000) + (sec * 1000))
         this.registerInterval(myInterval);
+
+        this.registerView(
+            VIEW_TYPE,
+            (leaf: WorkspaceLeaf) => new ReminderNotificationsView(this, leaf)
+        );
+
+        const newLeaf: WorkspaceLeaf = this.app.workspace.getRightLeaf(false);
+        await newLeaf.setViewState({
+            type: VIEW_TYPE,
+        });
+        //this.app.workspace.getLeavesOfType(VIEW_TYPE).first();
+        //this.app.workspace.revealLeaf(newLeaf);
+        checkForReminders(this, myInterval);
     }
 
     onunload() {
         console.log(`Unloading plugin: ${pluginName} [Device: ${this.deviceId}] [Hash: ${this.pluginHashId}]`);
+        this.app.workspace
+            .getLeavesOfType(VIEW_TYPE)
+            .forEach((leaf) => leaf.detach());
     }
 
     async loadSettings() {

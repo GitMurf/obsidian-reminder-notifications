@@ -1,7 +1,113 @@
-import { App, Modal, nldPlugin, Notice, Plugin_2, setIcon, SuggestModal } from 'obsidian';
+import { App, ItemView, Modal, nldPlugin, Notice, setIcon, SuggestModal, WorkspaceLeaf } from 'obsidian';
 import { addTime, formatDate, getTimeDurationString, getTimeTypeEnumFromString, getTimeTypeString } from './helpers';
-import MyPlugin from './main';
+import MyPlugin, { VIEW_ICON, VIEW_TYPE } from './main';
 import { Reminder, TimeType } from './types';
+
+export class ReminderNotificationsView extends ItemView {
+    constructor(private plugin: MyPlugin, leaf: WorkspaceLeaf) {
+        super(leaf);
+    }
+
+    getViewType(): string {
+        return VIEW_TYPE;
+    }
+
+    getDisplayText(): string {
+        //The text that appears when you hover the view icon
+        return "Reminder Notifications";
+    }
+
+    getIcon(): string {
+        return VIEW_ICON;
+    }
+
+    setupNavButtonCont(parEl: HTMLElement): HTMLDivElement {
+        const navHeader = parEl.createDiv("nav-header");
+        const navButContainer = navHeader.createDiv("nav-buttons-container");
+        return navButContainer;
+    }
+
+    addNavButton(navButContainer: HTMLDivElement, tooltip: string, icon: string, size: number = 20): HTMLDivElement {
+        let myButton = navButContainer.createDiv("nav-action-button");
+        myButton.ariaLabel = tooltip;
+        setIcon(myButton, icon, size);
+        return myButton;
+    }
+
+    addBacklinksDefaultNavButtons(navButContainer: HTMLDivElement): void {
+        let myButton = navButContainer.createDiv("nav-action-button");
+        myButton.ariaLabel = "Collapse results";
+        setIcon(myButton, "bullet-list", 20);
+        myButton = navButContainer.createDiv("nav-action-button");
+        myButton.ariaLabel = "Show more context";
+        setIcon(myButton, "expand-vertically", 20);
+        myButton = navButContainer.createDiv("nav-action-button");
+        myButton.ariaLabel = "Change sort order";
+        setIcon(myButton, "up-and-down-arrows", 20);
+        myButton = navButContainer.createDiv("nav-action-button");
+        myButton.ariaLabel = "Show search filter";
+        setIcon(myButton, "magnifying-glass", 20);
+    }
+
+    setupCollapsableResults(parEl: HTMLElement): HTMLDivElement {
+        const mainHeader = parEl.createDiv("search-result-container mod-global-search node-insert-event");
+        const resChildren = mainHeader.createDiv("search-results-children");
+        return resChildren;
+    }
+
+    addCollapsableResult(resultChildren: HTMLDivElement, result: { title: string, created: number, reminder: number }): HTMLDivElement | null {
+        const timeRemaining = result.reminder - new Date().getTime();
+        const momDiff = window.moment.duration(timeRemaining);
+        let timeString = "";
+        if (timeRemaining > 0) {
+            let days = Math.floor(momDiff.asDays());
+            if (days > 0) {
+                timeString = `${days}d `;
+            }
+            let hours = Math.floor(momDiff.asHours()) - (days * 24);
+            if (hours > 0) {
+                timeString += `${hours}h `;
+            }
+            let minutes = Math.floor(momDiff.asMinutes()) - (days * 24 * 60) - (hours * 60);
+            if (minutes > 0) {
+                timeString += `${minutes}m `;
+            }
+            let seconds = Math.floor(momDiff.asSeconds()) - (days * 24 * 60 * 60) - (hours * 60 * 60) - (minutes * 60);
+            if (seconds > 0) {
+                timeString += `${Math.floor(seconds)}s`;
+            }
+        }
+        if(timeString === "") { return null }
+        const eachChild = resultChildren.createDiv("tree-item search-result");
+        const childTitle = eachChild.createDiv("tree-item-self search-result-file-title is-clickable");
+        const collapseIcon = childTitle.createDiv("tree-item-icon collapse-icon");
+        setIcon(collapseIcon, "right-triangle", 8);
+        const treeInner = childTitle.createDiv({ cls: "tree-item-inner", text: result.title });
+        const treeOuter = childTitle.createDiv("tree-item-flair-outer");
+        const treeFlair = treeOuter.createSpan({ cls: "tree-item-flair", text: timeString });
+        const childMatch = eachChild.createDiv("search-result-file-matches");
+        childMatch.createDiv("search-result-file-match")
+            .createSpan({ text: `CREATED: ${formatDate(result.created)}` });
+        childMatch.createDiv("search-result-file-match")
+            .createSpan({ text: `REMINDER: ${formatDate(result.reminder)}` });
+        return eachChild;
+    }
+
+    async onClose(): Promise<void> {
+        await super.onClose();
+    }
+
+    async onOpen(): Promise<void> {
+        this.contentEl.empty();
+        this.contentEl.addClass("rem-notifications-view");
+        const mainDiv = this.contentEl.createDiv("main");
+        mainDiv.createEl("h2", { cls: "test-class", text: "Reminder Notifications" });
+        const navButCont = this.setupNavButtonCont(mainDiv);
+        this.addBacklinksDefaultNavButtons(navButCont);
+        this.setupCollapsableResults(mainDiv);
+        await super.onOpen();
+    }
+}
 
 export class InputModal extends Modal {
     constructor(private plugin: MyPlugin) {

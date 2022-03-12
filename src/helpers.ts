@@ -1,7 +1,7 @@
 import { Plugin, Stat } from "obsidian";
-import MyPlugin from "./main";
+import MyPlugin, { VIEW_TYPE } from "./main";
 import { Reminder, TimeType } from "./types";
-import { ReminderNotice } from "./ui";
+import { ReminderNotice, ReminderNotificationsView } from "./ui";
 
 export async function checkForReminders(plugin: MyPlugin, myIntervalId: number): Promise<void> {
     const newDateTimeNumber = new Date().getTime();
@@ -34,6 +34,21 @@ export async function checkForReminders(plugin: MyPlugin, myIntervalId: number):
     }
     await reloadDataJsonIfNewer(plugin);
 
+    //Reset the view clearing it and setting the variables to use below
+    const remLeaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE).first();
+    let remView: ReminderNotificationsView | undefined;
+    let resultsContainer: HTMLDivElement | undefined;
+    if (remLeaf) {
+        remView = remLeaf.view as ReminderNotificationsView;
+        resultsContainer = remView.contentEl.querySelector(".search-results-children") as HTMLDivElement;
+        resultsContainer.empty();
+    }
+
+    let viewResults: {
+        title: string;
+        created: number;
+        nextReminder: number;
+    }[] = [];
     const myReminders = plugin.settings.reminders;
     //loop through all reminders
     let ctrNew = 0;
@@ -42,6 +57,12 @@ export async function checkForReminders(plugin: MyPlugin, myIntervalId: number):
         const reminder = myReminders[i];
         const seenAlready = reminder.seen.includes(plugin.deviceId);
         const completedAlready = reminder.completed;
+
+        //Update the leaf view display for reminders
+        if (resultsContainer && remView) {
+            viewResults.push({ title: reminder.title, created: reminder.createdAt, nextReminder: reminder.remindNext });
+        }
+
         if (completedAlready === null || completedAlready === undefined || completedAlready === 0) {
             //Not marked as completed yet
             //Whether "seen" or not, still should just apply as if hadn't been seen before even if re-show a notification
@@ -82,6 +103,16 @@ export async function checkForReminders(plugin: MyPlugin, myIntervalId: number):
                 }
             }
         }
+    }
+
+    //Update the leaf view display for reminders
+    if (resultsContainer && remView) {
+        viewResults.sort((a, b) => a.nextReminder - b.nextReminder);
+        viewResults.forEach(element => {
+            if (remView && resultsContainer) {
+                remView.addCollapsableResult(resultsContainer, { title: element.title, created: element.created, reminder: element.nextReminder });
+            }
+        });
     }
 
     if (ctrNew > 0 || ctrArchived > 0) {
