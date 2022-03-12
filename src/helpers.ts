@@ -3,7 +3,7 @@ import MyPlugin, { VIEW_TYPE } from "./main";
 import { Reminder, TimeType } from "./types";
 import { ReminderNotice, ReminderNotificationsView } from "./ui";
 
-export async function checkForReminders(plugin: MyPlugin, myIntervalId: number): Promise<void> {
+export async function checkForReminders(plugin: MyPlugin, myIntervalId: number, ignoreSync: boolean = false): Promise<void> {
     const newDateTimeNumber = new Date().getTime();
 
     //Check if the plugin instance is still loaded
@@ -22,7 +22,7 @@ export async function checkForReminders(plugin: MyPlugin, myIntervalId: number):
 
     //Need to load settings here (if Data.json has been updated) in case changed from another device; Obsidian does not reload variables otherwise
     const syncPlugin = getSyncPlugin(plugin);
-    if (syncPlugin) {
+    if (syncPlugin && !ignoreSync) {
         //Using the syncStatus instead of the syncing state because for whatever reasons sometimes the syncing state is set to "true" even though syncStatus is "Fully synced"
         const syncPluginSyncing = syncPlugin.instance.syncing;
         const syncPluginStatus = syncPlugin.instance.syncStatus;

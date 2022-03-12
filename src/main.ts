@@ -17,6 +17,10 @@ export default class MyPlugin extends Plugin {
     pluginHashId: string = "";
 
     async onload() {
+        this.registerView(
+            VIEW_TYPE,
+            (leaf: WorkspaceLeaf) => new ReminderNotificationsView(this, leaf)
+        );
         //NOT using an await here because don't want to hold up Obsidian loading overall
         this.delayedPluginLoad();
     }
@@ -93,13 +97,12 @@ export default class MyPlugin extends Plugin {
         }, (min * 60 * 1000) + (sec * 1000))
         this.registerInterval(myInterval);
 
-        this.registerView(
-            VIEW_TYPE,
-            (leaf: WorkspaceLeaf) => new ReminderNotificationsView(this, leaf)
-        );
-
-        const newLeaf: WorkspaceLeaf = this.app.workspace.getRightLeaf(false);
-        await newLeaf.setViewState({
+        let myLeaf: WorkspaceLeaf = this.app.workspace.getLeavesOfType(VIEW_TYPE)[0];
+        if (!myLeaf) {
+            const newLeaf: WorkspaceLeaf = this.app.workspace.getRightLeaf(false);
+            myLeaf = newLeaf;
+        }
+        await myLeaf.setViewState({
             type: VIEW_TYPE,
         });
         //this.app.workspace.getLeavesOfType(VIEW_TYPE).first();
