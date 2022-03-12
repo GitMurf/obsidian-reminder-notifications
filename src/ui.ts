@@ -55,24 +55,62 @@ export class ReminderNotificationsView extends ItemView {
         return resChildren;
     }
 
+    getDateTimeFormat(dateTime: Date | number): string {
+        let dateFormat = "MMM Do [at] h:mm A";
+        const targetDay = window.moment(dateTime).date();
+        const todDay = window.moment().date();
+        const dayDiff = targetDay - todDay;
+        switch (dayDiff) {
+            case 0:
+                dateFormat = "h:mm A";
+                break;
+            case -1:
+                dateFormat = "[Yesterday at] h:mm A";
+                break;
+            case -2:
+                dateFormat = "dddd [at] h:mm A";
+                break;
+            case -3:
+                dateFormat = "dddd [at] h:mm A";
+                break;
+            case 1:
+                dateFormat = "[Tomorrow at] h:mm A";
+                break;
+            case 2:
+                dateFormat = "dddd [at] h:mm A";
+                break;
+            case 3:
+                dateFormat = "dddd [at] h:mm A";
+                break;
+            default:
+                dateFormat = "MMM Do [at] h:mm A";
+                break;
+        }
+        return dateFormat;
+    }
+
     addCollapsableResult(resultChildren: HTMLDivElement, result: { title: string, created: number, reminder: number }): HTMLDivElement | null {
         const timeRemaining = result.reminder - new Date().getTime();
         const momDiff = window.moment.duration(timeRemaining);
         let timeString = "";
+        let days = 0;
+        let hours = 0;
+        let minutes = 0;
+        let seconds = 0;
         if (timeRemaining > 0) {
-            let days = Math.floor(momDiff.asDays());
+            days = Math.floor(momDiff.asDays());
             if (days > 0) {
                 timeString = `${days}d `;
             }
-            let hours = Math.floor(momDiff.asHours()) - (days * 24);
+            hours = Math.floor(momDiff.asHours()) - (days * 24);
             if (hours > 0) {
                 timeString += `${hours}h `;
             }
-            let minutes = Math.floor(momDiff.asMinutes()) - (days * 24 * 60) - (hours * 60);
+            minutes = Math.floor(momDiff.asMinutes()) - (days * 24 * 60) - (hours * 60);
             if (minutes > 0) {
                 timeString += `${minutes}m `;
             }
-            let seconds = Math.floor(momDiff.asSeconds()) - (days * 24 * 60 * 60) - (hours * 60 * 60) - (minutes * 60);
+            seconds = Math.floor(momDiff.asSeconds()) - (days * 24 * 60 * 60) - (hours * 60 * 60) - (minutes * 60);
             if (seconds > 0) {
                 timeString += `${Math.floor(seconds)}s`;
             }
@@ -85,11 +123,33 @@ export class ReminderNotificationsView extends ItemView {
         const treeInner = childTitle.createDiv({ cls: "tree-item-inner", text: result.title });
         const treeOuter = childTitle.createDiv("tree-item-flair-outer");
         const treeFlair = treeOuter.createSpan({ cls: "tree-item-flair", text: timeString });
+        if (timeRemaining < (1000 * 60 * 15)) {
+            treeFlair.addClass("expiring-soon");
+        }
         const childMatch = eachChild.createDiv("search-result-file-matches");
-        childMatch.createDiv("search-result-file-match")
-            .createSpan({ text: `CREATED: ${formatDate(result.created)}` });
-        childMatch.createDiv("search-result-file-match")
-            .createSpan({ text: `REMINDER: ${formatDate(result.reminder)}` });
+        let eachMatch = childMatch.createDiv("search-result-file-match");
+        if (eachMatch) {
+            const iconSpan = eachMatch.createSpan({ cls: "icon-container" });
+            setIcon(iconSpan, "bell", 15);
+            let dateFormat = this.getDateTimeFormat(result.reminder);
+            if (days < 1 && hours < 1 && minutes < 1 && seconds > 0) {
+                dateFormat = `[${seconds} seconds at] ${dateFormat}`;
+            } else if (days < 1 && hours < 1 && minutes > 0) {
+                //dateFormat = `${dateFormat} [in ${minutes} minutes]`;
+                dateFormat = minutes > 1 ? `[${minutes} minutes at] ${dateFormat}` : `[${minutes} minute at] ${dateFormat}`;
+            } else if (days < 1 && hours === 1) {
+                //dateFormat = `${dateFormat} [in ${minutes} minutes]`;
+                dateFormat = `[Next Hour at] ${dateFormat}`;
+            }
+            eachMatch.createSpan({ text: `${formatDate(result.reminder, dateFormat)}` });
+        }
+        eachMatch = childMatch.createDiv("search-result-file-match");
+        if (eachMatch) {
+            const iconSpan = eachMatch.createSpan({ cls: "icon-container" });
+            setIcon(iconSpan, "clock", 15);
+            let dateFormat = this.getDateTimeFormat(result.created);
+            eachMatch.createSpan({ text: `${formatDate(result.created, dateFormat)}` });
+        }
         return eachChild;
     }
 

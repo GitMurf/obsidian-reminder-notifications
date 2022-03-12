@@ -19,3 +19,13 @@ div.view-content.rem-notifications-view .nav-header {
 div.view-content.rem-notifications-view .main > h2 {
     padding-left: 10px;
 }
+
+div.view-content.rem-notifications-view .icon-container {
+    padding-right: 10px;
+    position: relative;
+    top: 2px;
+}
+div.view-content.rem-notifications-view .tree-item-flair.expiring-soon {
+    background-color: var(--interactive-accent);
+    color: var(--text-normal);
+}
