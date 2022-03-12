@@ -86,7 +86,7 @@ export default class MyPlugin extends Plugin {
         this.addSettingTab(new SampleSettingTab(this.app, this));
 
         const min = 0;
-        const sec = 10;
+        const sec = 5;
         // When registering intervals, this function will automatically clear the interval when the plugin is disabled.
         let myInterval = window.setInterval(() => {
             checkForReminders(this, myInterval);
