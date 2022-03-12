@@ -52,14 +52,10 @@ export class InputModal extends Modal {
 }
 
 export class ReminderNotice extends Notice {
-    constructor(title: string, dateTime: number | Date, seconds?: number) {
-        let milliseconds: number | undefined = undefined;
+    constructor(title: string, dateTime: number | Date, seconds: number = 10) {
+        let milliseconds: number = seconds * 1000;
         let newDocFrag = createFragment();
         let dateString = formatDate(dateTime, "hh:mm A [on] MMM Do");
-
-        if (seconds) {
-            milliseconds = seconds * 1000;
-        }
         let newDivPar = newDocFrag.createDiv();
         let spanParDiv = newDivPar.createDiv();
         let newSpan1 = spanParDiv.createSpan();
@@ -87,10 +83,17 @@ export class ReminderNotice extends Notice {
         });
         this.noticeEl.style.maxWidth = "unset";
         this.noticeEl.style.cursor = "unset";
+
+        //NOTE: The notification notice in Obsidian will actually never close because I turned off the native "hide()" method
+            //This will auto close the notice after the specified time with my own setTimeout().
+            //Replaces Obsidian core method since the native hide() method is turned off
+        console.log('before setTimeout');
+        setTimeout(() => this.closeNotice(), milliseconds);
+        console.log('after setTimeout');
     }
 
     hide(): void {
-        //Do nothing... prevents closing on click other than close button
+        //Do nothing... prevents closing on click, other than close button
     }
 
     closeNotice(): void {
