@@ -2,12 +2,14 @@ div.side-dock-ribbon-action[aria-label*="Reminder"] {
     position: relative;
     left: -1px;
 }
-div.prompt-results > div.suggestion-item > span.modal-icon {
+
+div.prompt-results>div.suggestion-item>span.modal-icon {
     position: absolute;
     left: 10px;
     top: 7px;
 }
-body > div.modal-container.reminder-input-modal input {
+
+body>div.modal-container.reminder-input-modal input {
     width: 30vw;
     margin-right: 20px;
 }
@@ -18,18 +20,20 @@ div.view-content.rem-notifications-view .nav-header {
     padding-top: 0px;
 }
 */
-div.view-content.rem-notifications-view .main > h2 {
+div.view-content.rem-notifications-view .main>h2 {
     padding-left: 10px;
 }
 
 div.view-content.rem-notifications-view .tree-item.search-result.is-collapsed .search-result-file-matches {
     display: none;
 }
+
 div.view-content.rem-notifications-view .search-result-file-match .icon-container {
     padding-right: 10px;
     position: relative;
     top: 2px;
 }
+
 div.view-content.rem-notifications-view .tree-item-flair.expiring-soon {
     background-color: var(--interactive-accent);
     color: var(--text-normal);
