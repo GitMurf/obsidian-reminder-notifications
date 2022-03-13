@@ -15,6 +15,7 @@ export default class MyPlugin extends Plugin {
     pluginFolderDir: string = "";
     lastLoadDataJsonModified: number = 0;
     pluginHashId: string = "";
+    myInterval: number = 0;
 
     async onload() {
         this.registerView(
@@ -96,6 +97,7 @@ export default class MyPlugin extends Plugin {
             checkForReminders(this, myInterval);
         }, (min * 60 * 1000) + (sec * 1000))
         this.registerInterval(myInterval);
+        this.myInterval = myInterval;
 
         let myLeaf: WorkspaceLeaf = this.app.workspace.getLeavesOfType(VIEW_TYPE)[0];
         if (!myLeaf) {
@@ -107,7 +109,7 @@ export default class MyPlugin extends Plugin {
         });
         //this.app.workspace.getLeavesOfType(VIEW_TYPE).first();
         //this.app.workspace.revealLeaf(newLeaf);
-        checkForReminders(this, myInterval);
+        checkForReminders(this, myInterval, true);
     }
 
     onunload() {

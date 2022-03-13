@@ -96,6 +96,7 @@ export interface Reminder {
     completed: number;
     seen: string[];
     notes: string;
+    collapsed: boolean;
 }
 
 type Occurrence = 'minutes' | 'hours' | 'days' | 'weeks' | 'months';

@@ -45,9 +45,11 @@ export async function checkForReminders(plugin: MyPlugin, myIntervalId: number, 
     }
 
     let viewResults: {
+        id: number;
         title: string;
         created: number;
         nextReminder: number;
+        collapsed: boolean;
     }[] = [];
     const myReminders = plugin.settings.reminders;
     //loop through all reminders
@@ -60,7 +62,7 @@ export async function checkForReminders(plugin: MyPlugin, myIntervalId: number, 
 
         //Update the leaf view display for reminders
         if (resultsContainer && remView) {
-            viewResults.push({ title: reminder.title, created: reminder.createdAt, nextReminder: reminder.remindNext });
+            viewResults.push({ id: reminder.id, title: reminder.title, created: reminder.createdAt, nextReminder: reminder.remindNext, collapsed: reminder.collapsed });
         }
 
         if (completedAlready === null || completedAlready === undefined || completedAlready === 0) {
@@ -110,7 +112,7 @@ export async function checkForReminders(plugin: MyPlugin, myIntervalId: number, 
         viewResults.sort((a, b) => a.nextReminder - b.nextReminder);
         viewResults.forEach(element => {
             if (remView && resultsContainer) {
-                remView.addCollapsableResult(resultsContainer, { title: element.title, created: element.created, reminder: element.nextReminder });
+                remView.addCollapsableResult(resultsContainer, { id: element.id, title: element.title, created: element.created, reminder: element.nextReminder, collapsed: element.collapsed });
             }
         });
     }
@@ -190,6 +192,27 @@ function reminderArchive(plugin: MyPlugin, reminder: Reminder, remIndex: number)
         console.log(`completed: ${formatDate(reminder.completed)}`);
         console.log(reminder.seen);
         return false;
+    }
+}
+
+export async function reminderDelete(plugin: MyPlugin, reminderId: number) {
+    const myReminders = plugin.settings.reminders;
+    const targetReminder = myReminders.findIndex(reminder => reminder.id === reminderId);
+    if (targetReminder) {
+        myReminders.splice(targetReminder, 1);
+        plugin.settings.lastUpdated = new Date().getTime();
+        await plugin.saveSettings();
+    }
+}
+
+export async function reminderSetPropById<T extends keyof Reminder>(plugin: MyPlugin, reminderId: number, prop: T, value: Reminder[T]) {
+    const myReminders = plugin.settings.reminders;
+    const targetReminder = myReminders.find(reminder => reminder.id === reminderId);
+    if (targetReminder) {
+        targetReminder[prop] = value;
+        plugin.settings.lastUpdated = new Date().getTime();
+        //Don't want to force a save and obsidian sync every time you click collapse/expand
+        //await plugin.saveSettings();
     }
 }
 

@@ -1,5 +1,5 @@
 import { App, ItemView, Modal, nldPlugin, Notice, setIcon, SuggestModal, WorkspaceLeaf } from 'obsidian';
-import { addTime, formatDate, getTimeDurationString, getTimeTypeEnumFromString, getTimeTypeString } from './helpers';
+import { addTime, checkForReminders, formatDate, getTimeDurationString, getTimeTypeEnumFromString, getTimeTypeString, reminderDelete, reminderSetPropById } from './helpers';
 import MyPlugin, { VIEW_ICON, VIEW_TYPE } from './main';
 import { Reminder, TimeType } from './types';
 
@@ -89,7 +89,7 @@ export class ReminderNotificationsView extends ItemView {
         return dateFormat;
     }
 
-    addCollapsableResult(resultChildren: HTMLDivElement, result: { title: string, created: number, reminder: number }): HTMLDivElement | null {
+    addCollapsableResult(resultChildren: HTMLDivElement, result: { id: number, title: string, created: number, reminder: number, collapsed: boolean }): HTMLDivElement | null {
         const timeRemaining = result.reminder - new Date().getTime();
         const momDiff = window.moment.duration(timeRemaining);
         let timeString = "";
@@ -117,16 +117,35 @@ export class ReminderNotificationsView extends ItemView {
         }
         if(timeString === "") { return null }
         const eachChild = resultChildren.createDiv("tree-item search-result");
+        if (result.collapsed) {
+            eachChild.addClass("is-collapsed");
+        }
         const childTitle = eachChild.createDiv("tree-item-self search-result-file-title is-clickable");
         const collapseIcon = childTitle.createDiv("tree-item-icon collapse-icon");
         setIcon(collapseIcon, "right-triangle", 8);
+        childTitle.onclick = () => {
+            eachChild.classList.toggle("is-collapsed");
+            if(eachChild.classList.contains("is-collapsed")) {
+                reminderSetPropById(this.plugin, result.id, "collapsed", true);
+            } else {
+                reminderSetPropById(this.plugin, result.id, "collapsed", false);
+            }
+        }
         const treeInner = childTitle.createDiv({ cls: "tree-item-inner", text: result.title });
         const treeOuter = childTitle.createDiv("tree-item-flair-outer");
         const treeFlair = treeOuter.createSpan({ cls: "tree-item-flair", text: timeString });
+        const deleteButton = treeOuter.createSpan({ cls: "tree-item-delete icon-container" });
+        setIcon(deleteButton, "trash-2", 15);
+        deleteButton.onclick = async () => {
+            await reminderDelete(this.plugin, result.id);
+            await checkForReminders(this.plugin, this.plugin.myInterval, true);
+            console.log(`Deleted reminder with ID: ${result.id} and title: ${result.title}`);
+        }
         if (timeRemaining < (1000 * 60 * 15)) {
             treeFlair.addClass("expiring-soon");
         }
         const childMatch = eachChild.createDiv("search-result-file-matches");
+        //Reminder time span element
         let eachMatch = childMatch.createDiv("search-result-file-match");
         if (eachMatch) {
             const iconSpan = eachMatch.createSpan({ cls: "icon-container" });
@@ -143,12 +162,19 @@ export class ReminderNotificationsView extends ItemView {
             }
             eachMatch.createSpan({ text: `${formatDate(result.reminder, dateFormat)}` });
         }
+        //Creation time span element
         eachMatch = childMatch.createDiv("search-result-file-match");
         if (eachMatch) {
             const iconSpan = eachMatch.createSpan({ cls: "icon-container" });
             setIcon(iconSpan, "clock", 15);
             let dateFormat = this.getDateTimeFormat(result.created);
-            eachMatch.createSpan({ text: `${formatDate(result.created, dateFormat)}` });
+            let createdString = "Created on";
+            if (dateFormat.indexOf("at]") < 0) {
+                createdString = `Created Today at`;
+            } else if (dateFormat.toLowerCase().indexOf("yesterday") > 0) {
+                createdString = `Created`;
+            }
+            eachMatch.createSpan({ text: `${createdString} ${formatDate(result.created, dateFormat)}` });
         }
         return eachChild;
     }
@@ -161,7 +187,7 @@ export class ReminderNotificationsView extends ItemView {
         this.contentEl.empty();
         this.contentEl.addClass("rem-notifications-view");
         const mainDiv = this.contentEl.createDiv("main");
-        mainDiv.createEl("h2", { cls: "test-class", text: "Reminder Notifications" });
+        //mainDiv.createEl("h2", { cls: "test-class", text: "Reminder Notifications" });
         const navButCont = this.setupNavButtonCont(mainDiv);
         this.addBacklinksDefaultNavButtons(navButCont);
         this.setupCollapsableResults(mainDiv);
@@ -247,15 +273,12 @@ export class ReminderNotice extends Notice {
             console.log("Close button clicked");
             this.closeNotice();
         });
-        this.noticeEl.style.maxWidth = "unset";
-        this.noticeEl.style.cursor = "unset";
+        this.noticeEl.addClass("reminder-notice");
 
         //NOTE: The notification notice in Obsidian will actually never close because I turned off the native "hide()" method
             //This will auto close the notice after the specified time with my own setTimeout().
             //Replaces Obsidian core method since the native hide() method is turned off
-        console.log('before setTimeout');
         setTimeout(() => this.closeNotice(), milliseconds);
-        console.log('after setTimeout');
     }
 
     hide(): void {
@@ -529,6 +552,7 @@ class NewReminderModals extends OptionsModal {
             completed: 0,
             seen: [],
             notes: `[${this.thisPlugin.deviceId}] Created reminder at ${formatDate(dtTimeUID)}\nNext reminder${myNote} at ${formatDate(nextReminder)}`,
+            collapsed: false,
         };
         console.log(reminder.notes);
         this.thisPlugin.settings.reminders.push(reminder);
@@ -536,5 +560,6 @@ class NewReminderModals extends OptionsModal {
         await this.thisPlugin.saveSettings();
         //console.log("Reminder created and saved");
         console.log(reminder);
+        await checkForReminders(this.thisPlugin, this.thisPlugin.myInterval, true);
     }
 }
