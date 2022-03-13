@@ -45,6 +45,10 @@ div.view-content.rem-notifications-view .tree-item-delete.icon-container {
     top: 2px;
 }
 
+div.view-content.rem-notifications-view .tree-item-delete.icon-container:hover {
+    color: red;
+}
+
 div.notice-container div.notice.reminder-notice {
     max-width: 25vw;
     cursor: unset;
