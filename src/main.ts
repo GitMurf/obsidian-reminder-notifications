@@ -80,10 +80,11 @@ export default class MyPlugin extends Plugin {
 
         // This adds a simple command that can be triggered anywhere
         this.addCommand({
-            id: 'open-sample-modal-simple',
-            name: 'Open sample modal (simple)',
+            id: 'reminder-notifications-add-new-reminder',
+            name: 'Add New Reminder',
             callback: () => {
-                //new SampleModal(this.app).open();
+                this.modalResponse = [];
+                new InputModal(this).open();
             }
         });
 
