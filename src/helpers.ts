@@ -1,4 +1,4 @@
-import { Plugin, Stat } from "obsidian";
+import { Plugin, Stat, WorkspaceLeaf } from "obsidian";
 import MyPlugin, { VIEW_TYPE } from "./main";
 import { Reminder, TimeType } from "./types";
 import { ReminderNotice, ReminderNotificationsView } from "./ui";
@@ -95,25 +95,28 @@ export async function checkForReminders(plugin: MyPlugin, myIntervalId: number, 
         }
     }
 
-    //Reset the view clearing it and setting the variables to use below
-    //NOTE: you need to empty and re-create each time in order to update the countdown timers etc.
+    //Only refresh the view if it is currently open/active in view of user
+    if (isViewActive(plugin)) {
+        //Reset the view clearing it and setting the variables to use below
+        //NOTE: you need to empty and re-create each time in order to update the countdown timers etc.
         //Easier than trying to find the existing DOM elements and update them each time
-    const remLeaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE).first();
-    let remView: ReminderNotificationsView | undefined;
-    let resultsContainer: HTMLDivElement | undefined;
-    if (remLeaf) {
-        remView = remLeaf.view as ReminderNotificationsView;
-        resultsContainer = remView.contentEl.querySelector(".search-results-children") as HTMLDivElement;
-        resultsContainer.empty();
-    }
-    //Update the leaf view display for reminders
-    if (resultsContainer && remView) {
-        viewResults.sort((a, b) => a.nextReminder - b.nextReminder);
-        viewResults.forEach(element => {
-            if (remView && resultsContainer) {
-                remView.addCollapsableResult(resultsContainer, { id: element.id, title: element.title, created: element.created, reminder: element.nextReminder, collapsed: element.collapsed });
-            }
-        });
+        const remLeaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE).first();
+        let remView: ReminderNotificationsView | undefined;
+        let resultsContainer: HTMLDivElement | undefined;
+        if (remLeaf) {
+            remView = remLeaf.view as ReminderNotificationsView;
+            resultsContainer = remView.contentEl.querySelector(".search-results-children") as HTMLDivElement;
+            resultsContainer.empty();
+        }
+        //Update the leaf view display for reminders
+        if (resultsContainer && remView) {
+            viewResults.sort((a, b) => a.nextReminder - b.nextReminder);
+            viewResults.forEach(element => {
+                if (remView && resultsContainer) {
+                    remView.addCollapsableResult(resultsContainer, { id: element.id, title: element.title, created: element.created, reminder: element.nextReminder, collapsed: element.collapsed });
+                }
+            });
+        }
     }
 
     if (ctrNew > 0 || ctrArchived > 0) {
@@ -197,7 +200,7 @@ function reminderArchive(plugin: MyPlugin, reminder: Reminder, remIndex: number)
 export async function reminderDelete(plugin: MyPlugin, reminderId: number) {
     const myReminders = plugin.settings.reminders;
     const targetReminder = myReminders.findIndex(reminder => reminder.id === reminderId);
-    if (targetReminder) {
+    if (targetReminder > -1) {
         myReminders.splice(targetReminder, 1);
         plugin.settings.lastUpdated = new Date().getTime();
         await plugin.saveSettings();
@@ -386,6 +389,21 @@ export function createRandomHashId(charCt: number = 7): string {
 }
 
 export async function sleepDelay(plugin: MyPlugin, seconds: number): Promise<void> {
-    console.log(`[${formatDate()}] Sleeping for ${seconds} seconds. [${plugin.pluginHashId}]`);
+    //console.log(`[${formatDate()}] Sleeping for ${seconds} seconds. [${plugin.pluginHashId}]`);
     return new Promise(resolve => { setTimeout(resolve, seconds * 1000); });
+}
+
+export function isViewActive(plugin: MyPlugin, reminderLeaf: WorkspaceLeaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE)[0]) {
+    //Check if the view is currently open/active in view of user (in sidebar for example)
+    if (reminderLeaf) {
+        if (reminderLeaf.view.containerEl.isShown()) {
+            //console.log('ACTIVE');
+            return true;
+        } else {
+            //console.log('not currently active');
+            return false;
+        }
+    } else {
+        return false;
+    }
 }

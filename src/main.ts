@@ -2,7 +2,7 @@ import { Plugin, WorkspaceLeaf } from 'obsidian';
 import { MyPluginSettings } from './types';
 import { InputModal, ReminderNotificationsView } from './ui';
 import { SampleSettingTab, DEFAULT_SETTINGS } from './settings';
-import { checkForReminders, createRandomHashId, formatDate, getDeviceName, isObsidianSyncLoaded, sleepDelay, updateDataJsonModVar } from './helpers';
+import { checkForReminders, createRandomHashId, formatDate, getDeviceName, isObsidianSyncLoaded, isViewActive, sleepDelay, updateDataJsonModVar } from './helpers';
 
 export const pluginName = 'Reminder Notifications';
 export const VIEW_TYPE = 'reminder-notifications';
@@ -32,8 +32,8 @@ export default class MyPlugin extends Plugin {
         if (this.app.workspace.layoutReady) {
             //console.log('layoutReady so no need to delay plugin load...');
         } else {
-            //Wait 10 seconds to allow Obsidian sync to load and sync
-            await sleepDelay(this, 10);
+            //Wait 5 seconds to allow Obsidian sync to load and sync
+            await sleepDelay(this, 5);
             //Check if Obsidian sync is loaded and wait longer if not
             if (isObsidianSyncLoaded(this) === false) {
                 await sleepDelay(this, 5);
@@ -111,6 +111,20 @@ export default class MyPlugin extends Plugin {
         //this.app.workspace.getLeavesOfType(VIEW_TYPE).first();
         //this.app.workspace.revealLeaf(newLeaf);
         checkForReminders(this, myInterval, true);
+
+        //Add click event on the sidebar button that opens the view so that we can refresh view on click
+        const rightSidebarButtonEl = this.app.workspace.rightRibbon.collapseButtonEl;
+        this.registerDomEvent(rightSidebarButtonEl, "click", () => {
+            if (isViewActive(this)) {
+                checkForReminders(this, myInterval, true);
+            }
+        });
+        const leftSidebarButtonEl = this.app.workspace.leftRibbon.collapseButtonEl;
+        this.registerDomEvent(leftSidebarButtonEl, "click", () => {
+            if (isViewActive(this)) {
+                checkForReminders(this, myInterval, true);
+            }
+        });
     }
 
     onunload() {

@@ -2,7 +2,8 @@ import * as momentJs from "moment";
 
 declare module "obsidian" {
     interface WorkspaceLeaf {
-        containerEl: HTMLElement;
+        containerEl: HTMLDivElement;
+        tabHeaderEl: HTMLDivElement;
     }
     interface Plugin {
         "_loaded": boolean;
@@ -55,6 +56,11 @@ declare module "obsidian" {
             formattedString: string;
             moment: momentJs.Moment;
         }
+    }
+    interface WorkspaceRibbon {
+        collapseButtonEl: HTMLDivElement;
+        containerEl: HTMLDivElement;
+        isMobile: boolean;
     }
 }
 

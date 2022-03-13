@@ -1,5 +1,5 @@
 import { App, ItemView, Modal, nldPlugin, Notice, setIcon, SuggestModal, WorkspaceLeaf } from 'obsidian';
-import { addTime, checkForReminders, formatDate, getTimeDurationString, getTimeTypeEnumFromString, getTimeTypeString, reminderDelete, reminderSetPropById } from './helpers';
+import { addTime, checkForReminders, formatDate, getTimeDurationString, getTimeTypeEnumFromString, getTimeTypeString, isViewActive, reminderDelete, reminderSetPropById, sleepDelay } from './helpers';
 import MyPlugin, { VIEW_ICON, VIEW_TYPE } from './main';
 import { Reminder, TimeType } from './types';
 
@@ -38,6 +38,33 @@ export class ReminderNotificationsView extends ItemView {
         let myButton = navButContainer.createDiv("nav-action-button");
         myButton.ariaLabel = "Collapse results";
         setIcon(myButton, "bullet-list", 20);
+
+        myButton.addEventListener("click", (evt) => {
+            const targetEl = evt.target as HTMLDivElement;
+            let isCollapsed = true;
+            if (targetEl.classList.contains("is-active")) {
+                isCollapsed = false;
+                targetEl.removeClass("is-active");
+            } else {
+                isCollapsed = true;
+                targetEl.addClass("is-active");
+            }
+            const childrenReminders = Array.from(document.querySelectorAll(".view-content.rem-notifications-view .main .tree-item.search-result")) as HTMLDivElement[];
+            childrenReminders.forEach((reminder) => {
+                if (reminder.classList.contains("is-collapsed")) {
+                    if (!isCollapsed) {
+                        reminder.removeClass("is-collapsed");
+                        reminderSetPropById(this.plugin, parseInt(reminder.id), "collapsed", false);
+                    }
+                } else {
+                    if (isCollapsed) {
+                        reminder.addClass("is-collapsed");
+                        reminderSetPropById(this.plugin, parseInt(reminder.id), "collapsed", true);
+                    }
+                }
+            });
+        });
+        /*
         myButton = navButContainer.createDiv("nav-action-button");
         myButton.ariaLabel = "Show more context";
         setIcon(myButton, "expand-vertically", 20);
@@ -47,6 +74,7 @@ export class ReminderNotificationsView extends ItemView {
         myButton = navButContainer.createDiv("nav-action-button");
         myButton.ariaLabel = "Show search filter";
         setIcon(myButton, "magnifying-glass", 20);
+        */
     }
 
     setupCollapsableResults(parEl: HTMLElement): HTMLDivElement {
@@ -116,7 +144,7 @@ export class ReminderNotificationsView extends ItemView {
             }
         }
         if(timeString === "") { return null }
-        const eachChild = resultChildren.createDiv("tree-item search-result");
+        const eachChild = resultChildren.createDiv({ cls: "tree-item search-result", attr: { "id": result.id } });
         if (result.collapsed) {
             eachChild.addClass("is-collapsed");
         }
@@ -184,6 +212,14 @@ export class ReminderNotificationsView extends ItemView {
     }
 
     async onOpen(): Promise<void> {
+        //Add click event to the view leaf itself for when switching between views in sidebar
+        this.plugin.registerDomEvent(this.leaf.tabHeaderEl, "click", async () => {
+            await sleepDelay(this.plugin, .05);
+            if (isViewActive(this.plugin)) {
+                checkForReminders(this.plugin, this.plugin.myInterval, true);
+            }
+        });
+        //Empty the view to start
         this.contentEl.empty();
         this.contentEl.addClass("rem-notifications-view");
         const mainDiv = this.contentEl.createDiv("main");
