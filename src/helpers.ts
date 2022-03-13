@@ -34,16 +34,6 @@ export async function checkForReminders(plugin: MyPlugin, myIntervalId: number, 
     }
     await reloadDataJsonIfNewer(plugin);
 
-    //Reset the view clearing it and setting the variables to use below
-    const remLeaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE).first();
-    let remView: ReminderNotificationsView | undefined;
-    let resultsContainer: HTMLDivElement | undefined;
-    if (remLeaf) {
-        remView = remLeaf.view as ReminderNotificationsView;
-        resultsContainer = remView.contentEl.querySelector(".search-results-children") as HTMLDivElement;
-        resultsContainer.empty();
-    }
-
     let viewResults: {
         id: number;
         title: string;
@@ -61,9 +51,7 @@ export async function checkForReminders(plugin: MyPlugin, myIntervalId: number, 
         const completedAlready = reminder.completed;
 
         //Update the leaf view display for reminders
-        if (resultsContainer && remView) {
-            viewResults.push({ id: reminder.id, title: reminder.title, created: reminder.createdAt, nextReminder: reminder.remindNext, collapsed: reminder.collapsed });
-        }
+        viewResults.push({ id: reminder.id, title: reminder.title, created: reminder.createdAt, nextReminder: reminder.remindNext, collapsed: reminder.collapsed });
 
         if (completedAlready === null || completedAlready === undefined || completedAlready === 0) {
             //Not marked as completed yet
@@ -107,6 +95,17 @@ export async function checkForReminders(plugin: MyPlugin, myIntervalId: number, 
         }
     }
 
+    //Reset the view clearing it and setting the variables to use below
+    //NOTE: you need to empty and re-create each time in order to update the countdown timers etc.
+        //Easier than trying to find the existing DOM elements and update them each time
+    const remLeaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE).first();
+    let remView: ReminderNotificationsView | undefined;
+    let resultsContainer: HTMLDivElement | undefined;
+    if (remLeaf) {
+        remView = remLeaf.view as ReminderNotificationsView;
+        resultsContainer = remView.contentEl.querySelector(".search-results-children") as HTMLDivElement;
+        resultsContainer.empty();
+    }
     //Update the leaf view display for reminders
     if (resultsContainer && remView) {
         viewResults.sort((a, b) => a.nextReminder - b.nextReminder);
