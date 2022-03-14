@@ -14,12 +14,15 @@ body>div.modal-container.reminder-input-modal input {
     margin-right: 20px;
 }
 
-/*
-div.view-content.rem-notifications-view,
+/* div.view-content.rem-notifications-view, */
 div.view-content.rem-notifications-view .nav-header {
     padding-top: 0px;
 }
-*/
+
+div.view-content.rem-notifications-view .nav-header .nav-buttons-container .nav-action-button {
+    margin-bottom: 0;
+}
+
 div.view-content.rem-notifications-view .main>h2 {
     padding-left: 10px;
 }
