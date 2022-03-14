@@ -50,16 +50,16 @@ export class ReminderNotificationsView extends ItemView {
                 targetEl.addClass("is-active");
             }
             const childrenReminders = Array.from(document.querySelectorAll(".view-content.rem-notifications-view .main .tree-item.search-result")) as HTMLDivElement[];
-            childrenReminders.forEach((reminder) => {
-                if (reminder.classList.contains("is-collapsed")) {
+            childrenReminders.forEach((reminderEl) => {
+                if (reminderEl.classList.contains("is-collapsed")) {
                     if (!isCollapsed) {
-                        reminder.removeClass("is-collapsed");
-                        reminderSetPropById(this.plugin, parseInt(reminder.id), "collapsed", false);
+                        reminderEl.removeClass("is-collapsed");
+                        reminderSetPropById(this.plugin, parseInt(reminderEl.id), "collapsed", false);
                     }
                 } else {
                     if (isCollapsed) {
-                        reminder.addClass("is-collapsed");
-                        reminderSetPropById(this.plugin, parseInt(reminder.id), "collapsed", true);
+                        reminderEl.addClass("is-collapsed");
+                        reminderSetPropById(this.plugin, parseInt(reminderEl.id), "collapsed", true);
                     }
                 }
             });
