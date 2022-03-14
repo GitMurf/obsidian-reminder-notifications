@@ -117,7 +117,7 @@ export class ReminderNotificationsView extends ItemView {
         return dateFormat;
     }
 
-    addCollapsableResult(resultChildren: HTMLDivElement, result: { id: number, title: string, created: number, reminder: number, collapsed: boolean }): HTMLDivElement | null {
+    addCollapsableResult(resultChildren: HTMLDivElement, result: { ctr: number, id: number, title: string, created: number, reminder: number, collapsed: boolean }): HTMLDivElement | null {
         const timeRemaining = result.reminder - new Date().getTime();
         const momDiff = window.moment.duration(timeRemaining);
         let timeString = "";
@@ -143,67 +143,103 @@ export class ReminderNotificationsView extends ItemView {
                 timeString += `${Math.floor(seconds)}s`;
             }
         }
-        if(timeString === "") { return null }
-        const eachChild = resultChildren.createDiv({ cls: "tree-item search-result", attr: { "id": result.id } });
+        if (timeString === "") { return null }
+        //Check to see if the reminder already has an element
+        let eachChild = document.getElementById(result.id.toString()) as HTMLDivElement;
+        let treeFlair: HTMLSpanElement;
+        let reminderTimeEl: HTMLSpanElement;
+        let creationTimeEl: HTMLSpanElement;
+        if (!eachChild) {
+            if (resultChildren.childElementCount > 0 && resultChildren.children[result.ctr] !== undefined) {
+                console.log(result.ctr);
+                console.log(resultChildren.children[result.ctr]);
+                eachChild = resultChildren.insertBefore(createDiv({ cls: "tree-item search-result", attr: { "id": result.id } }), resultChildren.children[result.ctr]);
+            } else {
+                console.log("adding to end");
+                console.log(result);
+                eachChild = resultChildren.createDiv({ cls: "tree-item search-result", attr: { "id": result.id } });
+            }
+            console.log(`Adding collapsable result for ${result.title}`);
+            console.log(eachChild);
+            const childTitle = eachChild.createDiv("tree-item-self search-result-file-title is-clickable");
+            const collapseIcon = childTitle.createDiv("tree-item-icon collapse-icon");
+            setIcon(collapseIcon, "right-triangle", 8);
+            childTitle.onclick = () => {
+                eachChild.classList.toggle("is-collapsed");
+                if (eachChild.classList.contains("is-collapsed")) {
+                    reminderSetPropById(this.plugin, result.id, "collapsed", true);
+                } else {
+                    reminderSetPropById(this.plugin, result.id, "collapsed", false);
+                }
+            }
+            childTitle.createDiv({ cls: "tree-item-inner", text: result.title });
+            const treeOuter = childTitle.createDiv("tree-item-flair-outer");
+            treeFlair = treeOuter.createSpan({ cls: "tree-item-flair" });
+            const deleteButton = treeOuter.createSpan({ cls: "tree-item-delete icon-container" });
+            setIcon(deleteButton, "trash-2", 15);
+            deleteButton.onclick = async () => {
+                await reminderDelete(this.plugin, result.id);
+                await checkForReminders(this.plugin, this.plugin.myInterval, true);
+                console.log(`Deleted reminder with ID: ${result.id} and title: ${result.title}`);
+            }
+
+            const childMatch = eachChild.createDiv("search-result-file-matches");
+            //Reminder time span element
+            let eachMatch = childMatch.createDiv("search-result-file-match");
+            let iconSpan = eachMatch.createSpan({ cls: "icon-container" });
+            setIcon(iconSpan, "bell", 15);
+            reminderTimeEl = eachMatch.createSpan({ cls: "reminder-time" });
+            //Creation time span element
+            eachMatch = childMatch.createDiv("search-result-file-match");
+            iconSpan = eachMatch.createSpan({ cls: "icon-container" });
+            setIcon(iconSpan, "clock", 15);
+            creationTimeEl = eachMatch.createSpan({ cls: "creation-time" });
+        } else {
+            //console.log(`FOUND and Updating collapsable result for ${result.title}`);
+            treeFlair = eachChild.querySelector(".tree-item-flair") as HTMLSpanElement;
+            reminderTimeEl = eachChild.querySelector(".reminder-time") as HTMLSpanElement;
+            creationTimeEl = eachChild.querySelector(".creation-time") as HTMLSpanElement;
+        }
+
+        if (treeFlair) {
+            treeFlair.setText(timeString);
+        }
+
         if (result.collapsed) {
             eachChild.addClass("is-collapsed");
         }
-        const childTitle = eachChild.createDiv("tree-item-self search-result-file-title is-clickable");
-        const collapseIcon = childTitle.createDiv("tree-item-icon collapse-icon");
-        setIcon(collapseIcon, "right-triangle", 8);
-        childTitle.onclick = () => {
-            eachChild.classList.toggle("is-collapsed");
-            if(eachChild.classList.contains("is-collapsed")) {
-                reminderSetPropById(this.plugin, result.id, "collapsed", true);
-            } else {
-                reminderSetPropById(this.plugin, result.id, "collapsed", false);
-            }
-        }
-        const treeInner = childTitle.createDiv({ cls: "tree-item-inner", text: result.title });
-        const treeOuter = childTitle.createDiv("tree-item-flair-outer");
-        const treeFlair = treeOuter.createSpan({ cls: "tree-item-flair", text: timeString });
-        const deleteButton = treeOuter.createSpan({ cls: "tree-item-delete icon-container" });
-        setIcon(deleteButton, "trash-2", 15);
-        deleteButton.onclick = async () => {
-            await reminderDelete(this.plugin, result.id);
-            await checkForReminders(this.plugin, this.plugin.myInterval, true);
-            console.log(`Deleted reminder with ID: ${result.id} and title: ${result.title}`);
-        }
+
         if (timeRemaining < (1000 * 60 * 15)) {
             treeFlair.addClass("expiring-soon");
         }
-        const childMatch = eachChild.createDiv("search-result-file-matches");
+
         //Reminder time span element
-        let eachMatch = childMatch.createDiv("search-result-file-match");
-        if (eachMatch) {
-            const iconSpan = eachMatch.createSpan({ cls: "icon-container" });
-            setIcon(iconSpan, "bell", 15);
-            let dateFormat = this.getDateTimeFormat(result.reminder);
-            if (days < 1 && hours < 1 && minutes < 1 && seconds > 0) {
-                dateFormat = `[${seconds} seconds at] ${dateFormat}`;
-            } else if (days < 1 && hours < 1 && minutes > 0) {
-                //dateFormat = `${dateFormat} [in ${minutes} minutes]`;
-                dateFormat = minutes > 1 ? `[${minutes} minutes at] ${dateFormat}` : `[${minutes} minute at] ${dateFormat}`;
-            } else if (days < 1 && hours === 1) {
-                //dateFormat = `${dateFormat} [in ${minutes} minutes]`;
-                dateFormat = `[Next Hour at] ${dateFormat}`;
-            }
-            eachMatch.createSpan({ text: `${formatDate(result.reminder, dateFormat)}` });
+        let dateFormat = this.getDateTimeFormat(result.reminder);
+        if (days < 1 && hours < 1 && minutes < 1 && seconds > 0) {
+            dateFormat = `[${seconds} seconds at] ${dateFormat}`;
+        } else if (days < 1 && hours < 1 && minutes > 0) {
+            //dateFormat = `${dateFormat} [in ${minutes} minutes]`;
+            dateFormat = minutes > 1 ? `[${minutes} minutes at] ${dateFormat}` : `[${minutes} minute at] ${dateFormat}`;
+        } else if (days < 1 && hours === 1) {
+            //dateFormat = `${dateFormat} [in ${minutes} minutes]`;
+            dateFormat = `[Next Hour at] ${dateFormat}`;
         }
+        if (reminderTimeEl) {
+            reminderTimeEl.setText(`${formatDate(result.reminder, dateFormat)}`);
+        }
+
         //Creation time span element
-        eachMatch = childMatch.createDiv("search-result-file-match");
-        if (eachMatch) {
-            const iconSpan = eachMatch.createSpan({ cls: "icon-container" });
-            setIcon(iconSpan, "clock", 15);
-            let dateFormat = this.getDateTimeFormat(result.created);
-            let createdString = "Created on";
-            if (dateFormat.indexOf("at]") < 0) {
-                createdString = `Created Today at`;
-            } else if (dateFormat.toLowerCase().indexOf("yesterday") > 0) {
-                createdString = `Created`;
-            }
-            eachMatch.createSpan({ text: `${createdString} ${formatDate(result.created, dateFormat)}` });
+        dateFormat = this.getDateTimeFormat(result.created);
+        let createdString = "Created on";
+        if (dateFormat.indexOf("at]") < 0) {
+            createdString = `Created Today at`;
+        } else if (dateFormat.toLowerCase().indexOf("yesterday") > 0) {
+            createdString = `Created`;
         }
+        if (creationTimeEl) {
+            creationTimeEl.setText(`${createdString} ${formatDate(result.created, dateFormat)}`);
+        }
+
         return eachChild;
     }
 

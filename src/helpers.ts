@@ -50,14 +50,13 @@ export async function checkForReminders(plugin: MyPlugin, myIntervalId: number, 
         const seenAlready = reminder.seen.includes(plugin.deviceId);
         const completedAlready = reminder.completed;
 
-        //Update the leaf view display for reminders
-        viewResults.push({ id: reminder.id, title: reminder.title, created: reminder.createdAt, nextReminder: reminder.remindNext, collapsed: reminder.collapsed });
-
         if (completedAlready === null || completedAlready === undefined || completedAlready === 0) {
             //Not marked as completed yet
             //Whether "seen" or not, still should just apply as if hadn't been seen before even if re-show a notification
                 //In theory if not marked as complete then should not be seen yet... accounting for fluke scenarios just in case to show again
             //console.log("Reminder NOT marked as completed yet");
+            //Update the leaf view display for reminders
+            viewResults.push({ id: reminder.id, title: reminder.title, created: reminder.createdAt, nextReminder: reminder.remindNext, collapsed: reminder.collapsed });
             const nextReminder = reminder.remindNext;
             if (nextReminder) {
                 if (nextReminder < newDateTimeNumber && nextReminder > 0) {
@@ -106,15 +105,27 @@ export async function checkForReminders(plugin: MyPlugin, myIntervalId: number, 
         if (remLeaf) {
             remView = remLeaf.view as ReminderNotificationsView;
             resultsContainer = remView.contentEl.querySelector(".search-results-children") as HTMLDivElement;
-            resultsContainer.empty();
+            //resultsContainer.empty();
         }
         //Update the leaf view display for reminders
         if (resultsContainer && remView) {
+            //Remove any DOM child elements for reminders that have expired or been archived
+            const reminderEls = Array.from(resultsContainer.querySelectorAll(".tree-item.search-result"));
+            reminderEls.forEach((remEl) => {
+                const remElId = parseInt(remEl.id);
+                const foundReminder = viewResults.find((r) => r.id === remElId);
+                if (!foundReminder) {
+                    //Reminder has been deleted. Remove it from the DOM
+                    remEl.detach();
+                }
+            });
             viewResults.sort((a, b) => a.nextReminder - b.nextReminder);
+            let ctr = 0;
             viewResults.forEach(element => {
                 if (remView && resultsContainer) {
-                    remView.addCollapsableResult(resultsContainer, { id: element.id, title: element.title, created: element.created, reminder: element.nextReminder, collapsed: element.collapsed });
+                    remView.addCollapsableResult(resultsContainer, { ctr: ctr, id: element.id, title: element.title, created: element.created, reminder: element.nextReminder, collapsed: element.collapsed });
                 }
+                ctr++;
             });
         }
     }
