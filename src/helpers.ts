@@ -28,7 +28,7 @@ export async function checkForReminders(plugin: MyPlugin, myIntervalId: number, 
         const syncPluginStatus = syncPlugin.instance.syncStatus;
         const syncPluginPaused = syncPlugin.instance.pause;
         if (syncPluginStatus !== "Fully synced" && syncPluginStatus !== "Paused" && syncPluginStatus !== "Connecting to server") {
-            console.log(`[${formatDate()}] ABORTING: Obsidian Sync is in the process of syncing [Syncing: ${syncPluginSyncing}] [Status: ${syncPluginStatus}]. Skipping reminder check. [${plugin.pluginHashId}]`);
+            //console.log(`[${formatDate()}] ABORTING: Obsidian Sync is in the process of syncing [Syncing: ${syncPluginSyncing}] [Status: ${syncPluginStatus}]. Skipping reminder check. [${plugin.pluginHashId}]`);
             return;
         }
     }
